@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VeloRoute — Route Planner</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{background:#0b0c10;color:#E8E9F0;font-family:Arial,sans-serif;min-height:600px}
+.app{display:flex;flex-direction:column;min-height:600px}
+/* HEADER */
+.hdr{display:flex;align-items:center;justify-content:space-between;padding:0 20px;height:54px;background:#0f111a;border-bottom:1px solid #252840;position:sticky;top:0;z-index:100}
+.logo{display:flex;align-items:center;gap:9px}
+.logo-ic{width:30px;height:30px;background:#FF4500;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}
+.logo-tx{font-size:19px;font-weight:700;letter-spacing:2px}
+.logo-sb{font-size:8px;color:#6b7280;letter-spacing:1px}
+.spill{display:flex;align-items:center;gap:5px;background:#1a1d2e;border:1px solid #252840;border-radius:20px;padding:3px 10px;font-size:10px;color:#9CA3AF}
+.sdot{width:5px;height:5px;border-radius:50%;background:#9CA3AF;flex-shrink:0;transition:all .3s}
+.sdot.live{background:#22C55E;box-shadow:0 0 5px #22C55E}
+.sdot.spin{background:#FF4500;animation:bl .8s infinite}
+.sdot.err{background:#ef4444}
+@keyframes bl{0%,100%{opacity:1}50%{opacity:.3}}
+.btn-gh{display:flex;align-items:center;gap:5px;background:#1a1d2e;border:1px solid #252840;border-radius:7px;padding:6px 12px;font-size:10px;color:#9CA3AF;cursor:pointer;transition:all .2s}
+.btn-gh:hover{border-color:#22C55E;color:#22C55E}
+/* BODY */
+.body{display:flex;height:460px;border-bottom:1px solid #252840}
+/* LEFT */
+.left{width:300px;flex-shrink:0;background:#131520;border-right:1px solid #252840;display:flex;flex-direction:column;overflow-y:auto}
+.mtabs{display:grid;grid-template-columns:1fr 1fr;border-bottom:1px solid #252840;flex-shrink:0}
+.mtab{background:transparent;border:none;border-right:1px solid #252840;padding:9px 6px;font-size:12px;font-weight:700;letter-spacing:1.5px;color:#6b7280;cursor:pointer;transition:all .2s;min-height:38px}
+.mtab:last-child{border-right:none}
+.mtab.active{color:#FF4500;border-bottom:2px solid #FF4500;background:rgba(255,69,0,.06)}
+.ps{padding:12px 14px;border-bottom:1px solid #252840;flex-shrink:0}
+.slbl{font-size:9px;font-weight:700;letter-spacing:2px;color:#6b7280;margin-bottom:8px;text-transform:uppercase}
+.rpt{display:flex;align-items:center;gap:7px;margin-bottom:5px}
+.ptm{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0}
+.ptA{background:#22C55E;color:#000}.ptB{background:#FF4500;color:#fff}
+.ifl{flex:1;background:#1a1d2e;border:1px solid #252840;border-radius:7px;padding:6px 9px;color:#E8E9F0;font-size:12px;outline:none;min-height:32px;transition:border-color .2s}
+.ifl:focus{border-color:#FF4500}.ifl::placeholder{color:#6b7280}
+.gbt{width:30px;height:30px;background:#1a1d2e;border:1px solid #252840;border-radius:7px;color:#9CA3AF;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .2s;min-height:30px}
+.gbt:hover{border-color:#FF4500;color:#FF4500}
+.cl{width:2px;height:6px;background:#252840;margin:1px 0 1px 10px;border-radius:1px}
+.wrow{display:flex;align-items:center;gap:7px;margin-bottom:4px}
+.wdel{width:22px;height:22px;border-radius:50%;background:transparent;border:1px solid #252840;color:#6b7280;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;flex-shrink:0}
+.wdel:hover{border-color:#ef4444;color:#ef4444}
+.rbtns{display:flex;gap:5px;margin-top:6px}
+.bsm{flex:1;padding:6px 4px;min-height:30px;border-radius:6px;font-size:9px;cursor:pointer;border:1px solid #252840;background:#1a1d2e;color:#6b7280;transition:all .2s;font-weight:600}
+.bsm:hover{border-color:#FF4500;color:#FF4500}
+/* COMPASS */
+.crose{position:relative;width:120px;height:120px;margin:7px auto 4px}
+.crbg{position:absolute;inset:0;border-radius:50%;border:1px solid #252840;background:radial-gradient(circle,#1a1d2e 0%,#131520 100%)}
+.crcen{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:32px;height:32px;border-radius:50%;background:#0b0c10;border:1px solid #252840;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:2}
+.cclbl{font-size:12px;font-weight:700;color:#FF4500;line-height:1}
+.ccdeg{font-size:8px;color:#6b7280;line-height:1}
+.cdir{position:absolute;width:24px;height:24px;border-radius:50%;background:#1a1d2e;border:1px solid #252840;color:#6b7280;font-size:8px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;transform:translate(-50%,-50%);z-index:1;transition:all .2s;min-height:24px}
+.cdir:hover{border-color:#FF4500;color:#FF4500}
+.cdir.active{background:#FF4500;border-color:#FF4500;color:#fff}
+.cdir[data-dir="0"]{top:16px;left:60px}.cdir[data-dir="45"]{top:28px;left:92px}.cdir[data-dir="90"]{top:60px;left:104px}
+.cdir[data-dir="135"]{top:92px;left:92px}.cdir[data-dir="180"]{top:104px;left:60px}.cdir[data-dir="225"]{top:92px;left:28px}
+.cdir[data-dir="270"]{top:60px;left:16px}.cdir[data-dir="315"]{top:28px;left:28px}
+.dval{font-size:22px;font-weight:700;color:#FF4500}
+.dkm{font-size:10px;color:#6b7280}
+input[type=range]{width:100%;-webkit-appearance:none;height:4px;background:#252840;border-radius:2px;outline:none;cursor:pointer;margin:4px 0}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;background:#fff;border-radius:50%;box-shadow:0 0 0 3px #FF4500;cursor:grab}
+input[type=range]::-moz-range-thumb{width:16px;height:16px;background:#fff;border-radius:50%;box-shadow:0 0 0 3px #FF4500;border:none}
+.rlbls{display:flex;justify-content:space-between;font-size:8px;color:#6b7280;margin-top:3px}
+.tgrid{display:grid;grid-template-columns:1fr 1fr;gap:5px}
+.tbtn{background:#1a1d2e;border:1px solid #252840;border-radius:7px;padding:7px 4px;cursor:pointer;text-align:center;color:#6b7280;font-size:10px;min-height:42px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;user-select:none;transition:all .2s}
+.tibig{font-size:14px;line-height:1}
+.tbtn.active{border-color:#FF4500;background:rgba(255,69,0,.1);color:#FF4500}
+.tbtn:hover:not(.active){border-color:#9CA3AF;color:#E8E9F0}
+.intlbls{display:flex;justify-content:space-between;font-size:9px;color:#6b7280;margin-top:4px}
+.pgrow{margin-top:auto;border-bottom:none}
+.genbtn{width:100%;background:#FF4500;color:#fff;border:none;border-radius:9px;padding:11px;font-size:14px;font-weight:700;letter-spacing:2px;cursor:pointer;transition:all .2s;min-height:42px}
+.genbtn:hover:not(:disabled){background:#FF7A3D}
+.genbtn:disabled{opacity:.6;cursor:not-allowed}
+.mab,.mring{display:none}
+.app.mode-ab .mab{display:block}.app.mode-ring .mring{display:block}
+/* MAP */
+.mapw{flex:1;position:relative;overflow:hidden}
+#vcanvas{display:block}
+.mleg{display:none;position:absolute;top:10px;right:10px;background:rgba(11,12,16,.92);border:1px solid #252840;border-radius:7px;padding:7px 11px;z-index:5}
+.mleg.on{display:block}
+.li{display:flex;align-items:center;gap:6px;font-size:10px;color:#E8E9F0;margin-bottom:4px;cursor:pointer;user-select:none;min-height:18px}
+.li:last-child{margin-bottom:0}
+.li.off{opacity:.3}
+.lln{width:12px;height:3px;border-radius:1px;flex-shrink:0}
+.dbanner{display:none;position:absolute;bottom:10px;left:50%;transform:translateX(-50%);background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.4);border-radius:6px;padding:5px 12px;font-size:9px;color:#F59E0B;white-space:nowrap;z-index:5}
+.dbanner.on{display:block}
+.mov{display:none;position:absolute;inset:0;background:rgba(11,12,16,.8);z-index:10;align-items:center;justify-content:center;flex-direction:column;gap:10px}
+.mov.on{display:flex}
+.spin2{width:26px;height:26px;border:2px solid #252840;border-top-color:#FF4500;border-radius:50%;animation:sp .7s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+.ovt{font-size:10px;color:#9CA3AF;letter-spacing:1px}
+/* CARDS */
+.rcards{padding:14px 20px 18px;background:#0b0c10;border-top:1px solid #252840}
+.rph{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.rptitle{font-size:16px;font-weight:700;letter-spacing:2px}
+.rpm{font-size:10px;color:#6b7280}
+.rgrid{display:grid;gap:10px}
+.rgrid.c1{grid-template-columns:minmax(0,400px)}.rgrid.c2{grid-template-columns:repeat(2,minmax(0,1fr))}.rgrid.c3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.skel{background:#131520;border:1px solid #252840;border-radius:9px;padding:14px;height:230px;display:flex;flex-direction:column;gap:7px}
+.sk{background:linear-gradient(90deg,#1a1d2e 25%,#252840 50%,#1a1d2e 75%);background-size:200% 100%;border-radius:3px;animation:sh 1.4s ease infinite}
+@keyframes sh{to{background-position:-200% 0}}
+.rcard{background:#131520;border:1px solid #252840;border-radius:9px;overflow:hidden;cursor:pointer;transition:border-color .2s,transform .2s;animation:fu .3s ease both}
+@keyframes fu{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.rcard:nth-child(2){animation-delay:.07s}.rcard:nth-child(3){animation-delay:.14s}
+.rcard.sel{border-color:#FF4500}
+.rcard:hover{transform:translateY(-2px)}
+.ctop{padding:9px 13px 4px;display:flex;justify-content:space-between;align-items:center}
+.badge{font-size:9px;padding:2px 7px;border-radius:20px;font-weight:700;letter-spacing:.5px}
+.br{background:rgba(255,69,0,.15);color:#FF4500;border:1px solid rgba(255,69,0,.3)}
+.bg{background:rgba(34,197,94,.15);color:#22C55E;border:1px solid rgba(34,197,94,.3)}
+.bm{background:rgba(168,85,247,.15);color:#A855F7;border:1px solid rgba(168,85,247,.3)}
+.bt{background:rgba(245,158,11,.15);color:#F59E0B;border:1px solid rgba(245,158,11,.3)}
+.cname{font-size:13px;font-weight:700;padding:0 13px 2px;color:#E8E9F0;letter-spacing:.5px}
+.csub{font-size:8px;color:#6b7280;padding:0 13px 6px}
+.cstats{display:grid;grid-template-columns:repeat(3,1fr);border-top:1px solid #252840;border-bottom:1px solid #252840}
+.cs{padding:6px 3px;text-align:center;border-right:1px solid #252840}
+.cs:last-child{border-right:none}
+.csv{font-size:14px;font-weight:700;line-height:1}
+.csl{font-size:7px;color:#6b7280;margin-top:2px;letter-spacing:.3px}
+.ewrap{padding:5px 10px 3px;position:relative}
+.ewrap canvas{display:block;width:100%;height:62px}
+.cdesc{padding:5px 13px 7px;font-size:9px;color:#9CA3AF;line-height:1.5;border-bottom:1px solid #252840}
+.cdesc b{color:#E8E9F0}
+.sbar{margin:0 10px 3px;height:3px;border-radius:2px;overflow:hidden;display:flex;gap:1px}
+.ss{height:100%}
+.slbs{display:flex;flex-wrap:wrap;gap:3px;padding:3px 10px 7px}
+.sl2{font-size:7px;color:#6b7280;display:flex;align-items:center;gap:2px}
+.sd{width:4px;height:4px;border-radius:50%;flex-shrink:0}
+.cfoot{display:flex;gap:5px;padding:7px 10px;background:#1a1d2e}
+.bf{flex:1;min-height:38px;border-radius:7px;font-size:10px;font-weight:600;cursor:pointer;border:1px solid #252840;display:flex;align-items:center;justify-content:center;gap:4px;transition:all .2s}
+.bf.pri{background:#FF4500;color:#fff;border-color:#FF4500}.bf.pri:hover{background:#FF7A3D}
+.bf.sec{background:transparent;color:#9CA3AF}.bf.sec:hover{color:#E8E9F0;border-color:#9CA3AF}
+.err-card{background:#131520;border:1px solid rgba(239,68,68,.3);border-radius:9px;padding:20px;text-align:center;color:#9CA3AF;font-size:11px}
+/* HISTORY */
+.hpanel{padding:10px 20px 14px;background:#0b0c10;border-top:1px solid #252840}
+.hhd{display:flex;align-items:center;justify-content:space-between;margin-bottom:7px}
+.htit{font-size:11px;font-weight:700;letter-spacing:2px;color:#6b7280;text-transform:uppercase}
+.hclr{font-size:9px;color:#6b7280;background:none;border:1px solid #252840;border-radius:4px;cursor:pointer;padding:2px 7px;transition:all .2s}
+.hclr:hover{border-color:#ef4444;color:#ef4444}
+.hlist{display:flex;gap:7px;overflow-x:auto;padding-bottom:3px}
+.hi{flex-shrink:0;background:#131520;border:1px solid #252840;border-radius:7px;padding:7px 11px;cursor:pointer;transition:all .2s;min-width:120px}
+.hi:hover{border-color:#FF4500}
+.hi-m{font-size:8px;color:#6b7280;margin-bottom:2px}
+.hi-r{font-size:11px;color:#E8E9F0;font-weight:600;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:150px}
+.hi-d{font-size:8px;color:#6b7280}
+/* MODAL */
+.modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:200;align-items:center;justify-content:center;padding:16px}
+.modal.on{display:flex}
+.mbox{background:#131520;border:1px solid #252840;border-radius:12px;padding:24px;max-width:460px;width:100%;position:relative;max-height:90vh;overflow-y:auto}
+.mtitle{font-size:20px;font-weight:700;letter-spacing:2px;margin-bottom:5px}
+.msub{font-size:10px;color:#6b7280;margin-bottom:14px}
+.murl{background:#1a1d2e;border:1px solid #252840;border-radius:7px;padding:10px 13px;margin-bottom:14px;font-size:11px;color:#22C55E;text-align:center}
+.msteps{display:flex;flex-direction:column;gap:8px;margin-bottom:14px}
+.step{display:flex;gap:10px;align-items:flex-start}
+.stn{width:20px;height:20px;border-radius:50%;background:#FF4500;color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+.stb{flex:1}
+.stitle{font-size:12px;font-weight:600;color:#E8E9F0;margin-bottom:2px}
+.sdetail{font-size:10px;color:#6b7280;line-height:1.5}
+.sdetail a{color:#FF4500;text-decoration:none}
+code{background:#1a1d2e;border:1px solid #252840;border-radius:3px;padding:1px 5px;font-size:10px;color:#22C55E}
+.mclose{width:100%;background:#1a1d2e;border:1px solid #252840;border-radius:7px;padding:9px;color:#9CA3AF;cursor:pointer;transition:all .2s;font-size:11px}
+.mclose:hover{border-color:#E8E9F0;color:#E8E9F0}
+.mx{position:absolute;top:14px;right:16px;background:none;border:none;color:#6b7280;font-size:20px;cursor:pointer;line-height:1}
+.mx:hover{color:#E8E9F0}
+/* TOAST */
+.toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%) translateY(60px);background:#1a1d2e;border:1px solid #252840;border-radius:7px;padding:7px 14px;font-size:10px;z-index:999;transition:transform .3s;white-space:nowrap;max-width:90vw;pointer-events:none}
+.toast.on{transform:translateX(-50%) translateY(0)}
+.toast.ok{border-color:#22C55E;color:#22C55E}.toast.bad{border-color:#ef4444;color:#ef4444}
+/* SCROLLBAR */
+::-webkit-scrollbar{width:4px;height:4px}::-webkit-scrollbar-thumb{background:#252840;border-radius:2px}
+/* RESPONSIVE */
+@media(max-width:900px){.left{width:260px}}
+@media(max-width:700px){
+  .body{flex-direction:column;height:auto}
+  .left{width:100%;max-height:260px;border-right:none;border-bottom:1px solid #252840}
+  .mapw{height:280px}
+  .rgrid.c2,.rgrid.c3{grid-template-columns:1fr}
+  .rcards,.hpanel{padding:10px 14px 14px}
+}
+</style>
+</head>
+<body>
+<div class="app mode-ab" id="app">
+
+<header class="hdr">
+  <div class="logo">
+    <div class="logo-ic">🚴</div>
+    <div><div class="logo-tx">VELOROUTE</div><div class="logo-sb">INTELLIGENT ROUTE PLANNER</div></div>
+  </div>
+  <div style="display:flex;align-items:center;gap:8px">
+    <div class="spill"><div class="sdot" id="dot"></div><span id="stxt">Готов</span></div>
+    <button class="btn-gh" id="ghBtn">🚀 GitHub Pages</button>
+  </div>
+</header>
+
+<div class="body">
+  <div class="left">
+    <div class="mtabs">
+      <button class="mtab active" data-mode="ab">A → B</button>
+      <button class="mtab" data-mode="ring">🔄 Кольцо</button>
+    </div>
+
+    <div class="ps mab">
+      <div class="slbl">Маршрут</div>
+      <div class="rpt"><div class="ptm ptA">A</div><input class="ifl" id="si" placeholder="Откуда..." value="Санкт-Петербург, центр"><button class="gbt" id="gb1" title="Моё местоположение">🎯</button></div>
+      <div class="cl"></div>
+      <div id="wptsWrap"></div>
+      <div class="rpt"><div class="ptm ptB">B</div><input class="ifl" id="ei" placeholder="Куда..."></div>
+      <div class="rbtns">
+        <button class="bsm" id="addW">＋ Точка</button>
+        <button class="bsm" id="swp">⇅ Swap</button>
+      </div>
+    </div>
+
+    <div class="ps mring">
+      <div class="slbl">Старт</div>
+      <div class="rpt"><div class="ptm ptA">A</div><input class="ifl" id="ri" placeholder="Откуда..." value="Санкт-Петербург, центр"><button class="gbt" id="gb2" title="Моё местоположение">🎯</button></div>
+      <div class="slbl" style="margin-top:10px">Направление</div>
+      <div class="crose">
+        <div class="crbg"></div>
+        <button class="cdir active" data-dir="0"   data-lbl="С">С</button>
+        <button class="cdir"        data-dir="45"  data-lbl="СВ">СВ</button>
+        <button class="cdir"        data-dir="90"  data-lbl="В">В</button>
+        <button class="cdir"        data-dir="135" data-lbl="ЮВ">ЮВ</button>
+        <button class="cdir"        data-dir="180" data-lbl="Ю">Ю</button>
+        <button class="cdir"        data-dir="225" data-lbl="ЮЗ">ЮЗ</button>
+        <button class="cdir"        data-dir="270" data-lbl="З">З</button>
+        <button class="cdir"        data-dir="315" data-lbl="СЗ">СЗ</button>
+        <div class="crcen"><div class="cclbl" id="cLbl">С</div><div class="ccdeg" id="cDeg">0°</div></div>
+      </div>
+      <div class="slbl" style="margin-top:10px">Дистанция</div>
+      <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:4px">
+        <div><span class="dval" id="dv">50</span><span class="dkm"> км</span></div>
+        <span style="font-size:8px;color:#6b7280">3 варианта ±22°</span>
+      </div>
+      <input type="range" id="ds" min="10" max="200" value="50" step="5">
+      <div class="rlbls"><span>10</span><span>200 км</span></div>
+    </div>
+
+    <div class="ps">
+      <div class="slbl">Тип маршрута</div>
+      <div class="tgrid">
+        <div class="tbtn active" data-type="road"><span class="tibig">🛣️</span>Шоссе</div>
+        <div class="tbtn active" data-type="gravel"><span class="tibig">🌲</span>Гравий</div>
+        <div class="tbtn active" data-type="mixed"><span class="tibig">🔀</span>Микс</div>
+        <div class="tbtn"        data-type="mtb"><span class="tibig">⛰️</span>МТБ</div>
+      </div>
+    </div>
+    <div class="ps">
+      <div class="slbl">Интенсивность</div>
+      <input type="range" id="ints" min="1" max="5" value="3">
+      <div class="intlbls"><span>😴</span><b style="color:#E8E9F0;font-size:10px" id="iLbl">Активно</b><span>🔥</span></div>
+    </div>
+    <div class="ps pgrow">
+      <button class="genbtn" id="genBtn">ПОСТРОИТЬ МАРШРУТЫ</button>
+    </div>
+  </div>
+
+  <div class="mapw">
+    <canvas id="vcanvas"></canvas>
+    <div class="mleg" id="mleg"></div>
+    <div class="dbanner" id="dbn">⚠️ ДЕМО — API работает при открытии файла в браузере</div>
+    <div class="mov" id="mov"><div class="spin2"></div><div class="ovt" id="ovt">...</div></div>
+  </div>
+</div>
+
+<div class="rcards">
+  <div class="rph"><div class="rptitle">ВАРИАНТЫ МАРШРУТОВ</div><div class="rpm" id="rpm">Введи параметры и нажми «Построить»</div></div>
+  <div class="rgrid c3" id="rg"></div>
+</div>
+
+<div class="hpanel">
+  <div class="hhd"><div class="htit">🕐 История маршрутов</div><button class="hclr" id="hclr">Очистить</button></div>
+  <div class="hlist" id="hl"></div>
+</div>
+
+</div><!-- .app -->
+
+<!-- GITHUB MODAL -->
+<div class="modal" id="ghModal">
+  <div class="mbox">
+    <button class="mx" id="mxBtn">×</button>
+    <div class="mtitle">🚀 GitHub Pages</div>
+    <div class="msub">Бесплатный хостинг · 5 минут · Доступен везде</div>
+    <div class="murl">https://[username].github.io/veloroute</div>
+    <div class="msteps">
+      <div class="step"><div class="stn">1</div><div class="stb"><div class="stitle">Создай репозиторий</div><div class="sdetail"><a href="https://github.com/new" target="_blank">github.com/new</a> → имя: <code>veloroute</code> → Public → Create</div></div></div>
+      <div class="step"><div class="stn">2</div><div class="stb"><div class="stitle">Переименуй файл</div><div class="sdetail">Скачай этот HTML → переименуй в <code>index.html</code></div></div></div>
+      <div class="step"><div class="stn">3</div><div class="stb"><div class="stitle">Загрузи в репо</div><div class="sdetail">«Add file» → «Upload files» → <code>index.html</code> → Commit changes</div></div></div>
+      <div class="step"><div class="stn">4</div><div class="stb"><div class="stitle">Включи Pages</div><div class="sdetail">Settings → Pages → Branch: <code>main</code> → <code>/root</code> → Save</div></div></div>
+      <div class="step"><div class="stn">5</div><div class="stb"><div class="stitle">Готово (~1 мин)</div><div class="sdetail">URL: <code>https://[username].github.io/veloroute</code></div></div></div>
+    </div>
+    <button class="mclose" id="mcloseBtn">Закрыть</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+'use strict';
+
+const ORS='eyJvcmciOiI1YjNjZTM1OTc4NTExMTAwMDFjZjYyNDgiLCJpZCI6ImExY2NkNzRiMGIwNjRlOTZiOTkwYzc4NTFiODZjMWIzIiwiaCI6Im11cm11cjY0In0=';
+const CL={road:'#FF4500',gravel:'#22C55E',mixed:'#A855F7',mtb:'#F59E0B'};
+const MT={road:{l:'🛣️ ШОССЕ',b:'br'},gravel:{l:'🌲 ГРАВИЙ',b:'bg'},mixed:{l:'🔀 МИКС',b:'bm'},mtb:{l:'⛰️ МТБ',b:'bt'}};
+const SF={road:[{l:'Асфальт',p:93,c:'#FF4500'},{l:'Прочее',p:7,c:'#555'}],gravel:[{l:'Грунт',p:54,c:'#22C55E'},{l:'Лес. дор.',p:29,c:'#16a34a'},{l:'Асфальт',p:17,c:'#555'}],mixed:[{l:'Асфальт',p:62,c:'#A855F7'},{l:'Велодор.',p:23,c:'#7c3aed'},{l:'Грунт',p:15,c:'#555'}],mtb:[{l:'Тропы',p:58,c:'#F59E0B'},{l:'Гравий',p:27,c:'#d97706'},{l:'Асфальт',p:15,c:'#555'}]};
+const INT=['Лёгко','Умеренно','Активно','Тяжело','Экстрим'];
+const DN={'0':'С','45':'СВ','90':'В','135':'ЮВ','180':'Ю','225':'ЮЗ','270':'З','315':'СЗ'};
+const PR={road:'cycling-road',gravel:'cycling-mountain',mixed:'cycling-regular',mtb:'cycling-mountain'};
+
+let mode='ab', selDir=0, routes={}, mapRoutes=[], mapHidden={};
+
+/* ── CANVAS MAP ─────────────────────────────── */
+const cvs=document.getElementById('vcanvas');
+const ctx=cvs.getContext('2d');
+
+function resizeCvs(){
+  const w=cvs.parentElement.offsetWidth||700;
+  cvs.width=w; cvs.height=cvs.parentElement.offsetHeight||460;
+  drawMap();
+}
+
+function ll2px(lat,lon,b,w,h){
+  const pad=36;
+  return[pad+(lon-b.w)/(b.e-b.w)*(w-pad*2), pad+(b.n-lat)/(b.n-b.s)*(h-pad*2)];
+}
+
+function drawMap(){
+  const w=cvs.width, h=cvs.height;
+  ctx.fillStyle='#0d0f1a'; ctx.fillRect(0,0,w,h);
+  // grid
+  ctx.strokeStyle='rgba(37,40,64,.45)'; ctx.lineWidth=1;
+  for(let i=1;i<4;i++){
+    ctx.beginPath();ctx.moveTo(w*i/4,0);ctx.lineTo(w*i/4,h);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(0,h*i/4);ctx.lineTo(w,h*i/4);ctx.stroke();
+  }
+  if(!mapRoutes.length){
+    ctx.fillStyle='#252840'; ctx.font='13px Arial'; ctx.textAlign='center';
+    ctx.fillText('Нажми «ПОСТРОИТЬ МАРШРУТЫ»',w/2,h/2-8);
+    ctx.fillStyle='#6b7280'; ctx.font='11px Arial';
+    ctx.fillText('Маршруты отобразятся на этой карте',w/2,h/2+12);
+    return;
+  }
+  const vis=mapRoutes.filter(r=>!mapHidden[r.key]);
+  if(!vis.length)return;
+  let mn=Infinity,mx=-Infinity,mw=Infinity,me=-Infinity;
+  vis.forEach(r=>r.lc.forEach(([la,lo])=>{mn=Math.min(mn,la);mx=Math.max(mx,la);mw=Math.min(mw,lo);me=Math.max(me,lo);}));
+  const pad=.004, b={n:mx+pad,s:mn-pad,w:mw-pad,e:me+pad};
+
+  vis.forEach(r=>{
+    ctx.beginPath(); ctx.strokeStyle=r.color; ctx.lineWidth=2.5; ctx.setLineDash(r.demo?[6,4]:[]);
+    r.lc.forEach(([la,lo],i)=>{const[x,y]=ll2px(la,lo,b,w,h); i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);});
+    ctx.stroke(); ctx.setLineDash([]);
+  });
+
+  // start/end markers
+  const drawn=new Set();
+  vis.forEach(r=>{
+    if(!r.lc.length)return;
+    const[s0,s1]=r.lc[0], [e0,e1]=r.lc[r.lc.length-1];
+    const sk=`${s0.toFixed(3)},${s1.toFixed(3)}`;
+    if(!drawn.has(sk)){
+      const[sx,sy]=ll2px(s0,s1,b,w,h);
+      ctx.beginPath();ctx.arc(sx,sy,7,0,Math.PI*2);ctx.fillStyle='#22C55E';ctx.fill();
+      ctx.strokeStyle='#fff';ctx.lineWidth=2;ctx.stroke();
+      ctx.fillStyle='#000';ctx.font='bold 9px Arial';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('A',sx,sy);
+      drawn.add(sk);
+    }
+    const ek=`${e0.toFixed(3)},${e1.toFixed(3)}`;
+    if(!drawn.has(ek)&&(Math.abs(s0-e0)>.001||Math.abs(s1-e1)>.001)){
+      const[ex,ey]=ll2px(e0,e1,b,w,h);
+      ctx.beginPath();ctx.arc(ex,ey,7,0,Math.PI*2);ctx.fillStyle='#FF4500';ctx.fill();
+      ctx.strokeStyle='#fff';ctx.lineWidth=2;ctx.stroke();
+      ctx.fillStyle='#fff';ctx.font='bold 9px Arial';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('B',ex,ey);
+      drawn.add(ek);
+    }
+  });
+  ctx.textBaseline='alphabetic';
+}
+
+/* ── ELEVATION CANVAS ───────────────────────── */
+function drawElev(cid,ep,dp,col){
+  const cv=document.getElementById(cid); if(!cv)return;
+  const cx=cv.getContext('2d');
+  cv.width=cv.offsetWidth||200; cv.height=62;
+  const w=cv.width, h=cv.height;
+  const minE=Math.min(...ep), maxE=Math.max(...ep), rng=maxE-minE||1;
+  const pl=4,pr=4,pt=4,pb=14, aw=w-pl-pr, ah=h-pt-pb;
+  cx.clearRect(0,0,w,h);
+  // fill
+  cx.beginPath(); cx.moveTo(pl,h-pb);
+  ep.forEach((e,i)=>{cx.lineTo(pl+i/(ep.length-1)*aw, pt+(1-(e-minE)/rng)*ah);});
+  cx.lineTo(pl+aw,h-pb); cx.closePath(); cx.fillStyle=col+'22'; cx.fill();
+  // line
+  cx.beginPath(); cx.strokeStyle=col; cx.lineWidth=1.5;
+  ep.forEach((e,i)=>{const x=pl+i/(ep.length-1)*aw, y=pt+(1-(e-minE)/rng)*ah; i===0?cx.moveTo(x,y):cx.lineTo(x,y);});
+  cx.stroke();
+  // x labels
+  cx.fillStyle='#6b7280'; cx.font='7px Arial'; cx.textAlign='center';
+  [0,.5,1].forEach(t=>{const d=dp[Math.floor(t*(dp.length-1))]||0; cx.fillText(d.toFixed(0)+'км',pl+t*aw,h-3);});
+  // elevation labels
+  cx.textAlign='right'; cx.fillText(maxE+'м',w-pr,pt+8);
+}
+
+/* ── ORS API ────────────────────────────────── */
+async function geocode(a){
+  const r=await fetch(`https://api.openrouteservice.org/geocode/search?api_key=${ORS}&text=${encodeURIComponent(a)}&size=1`);
+  if(!r.ok)throw new Error('Геокодер: '+r.status);
+  const d=await r.json(); if(!d.features?.length)throw new Error('Не найдено: «'+a+'»');
+  return d.features[0].geometry.coordinates;
+}
+async function fetchRoute(coords,prof){
+  const r=await fetch(`https://api.openrouteservice.org/v2/directions/${prof}/geojson?api_key=${ORS}`,
+    {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({coordinates:coords,elevation:true,instructions:false})});
+  if(!r.ok)throw new Error('ORS '+r.status);
+  return r.json();
+}
+function xStats(gj){
+  const f=gj.features[0],c=f.geometry.coordinates,s=f.properties.summary;
+  const eg=Math.round(s.ascent??0), dk=(s.distance/1000).toFixed(1);
+  const sp=Math.max(8,Math.round((s.distance/1000)/(s.duration/3600)));
+  const h=Math.floor(s.duration/3600),m=Math.floor((s.duration%3600)/60);
+  const step=Math.max(1,Math.floor(c.length/22));
+  const ep=[],dp=[];let acc=0;
+  for(let i=0;i<c.length;i+=step){
+    ep.push(Math.round(c[i][2]??0));
+    if(i>0){const p=c[i-step];acc+=Math.sqrt((c[i][0]-p[0])**2+(c[i][1]-p[1])**2)*111.32;}
+    dp.push(parseFloat(acc.toFixed(1)));
+  }
+  return{dk,sp,eg,tm:`${h}:${m.toString().padStart(2,'0')}`,ep,dp,lc:c.map(x=>[x[1],x[0]])};
+}
+const isNet=e=>e instanceof TypeError||e.message==='Failed to fetch';
+
+/* ── GENERATE ───────────────────────────────── */
+async function generate(){
+  const types=[...document.querySelectorAll('.tbtn.active')].map(b=>b.dataset.type).slice(0,3);
+  if(!types.length){toast('Выбери тип маршрута','bad');return;}
+  if(mode==='ab')await genAB(types); else await genRing(types);
+}
+
+async function genAB(types){
+  const sa=document.getElementById('si').value.trim(), ea=document.getElementById('ei').value.trim();
+  const wpts=[...document.querySelectorAll('.wpt-i')].map(i=>i.value.trim()).filter(Boolean);
+  if(!sa){toast('Введи точку A','bad');return;} if(!ea){toast('Введи точку B','bad');return;}
+  ss('spin','Геокодирование...');disBtn(true);ov(true,'Геокодирование...');skels(types.length);
+  try{
+    const allA=[sa,...wpts,ea];
+    const allC=await Promise.all(allA.map(geocode));
+    ov(true,`Строю ${types.length} маршрут(а)...`);
+    const res=await Promise.allSettled(types.map(t=>fetchRoute(allC,PR[t]).then(d=>({t,s:xStats(d)}))));
+    routes={};mapRoutes=[];mapHidden={};
+    res.forEach((r,i)=>{const t=types[i]; if(r.status==='fulfilled'){routes[t]={t,s:r.value.s};mapRoutes.push({key:t,color:CL[t],lc:r.value.s.lc});}else{routes[t]={t,err:r.reason?.message||'Ошибка'};}});
+    drawMap();drawCards(types,sa,ea,false);buildLeg(types);
+    saveH({mode:'ab',from:sa,to:ea,types,dist:Object.values(routes).find(r=>r.s)?.s?.dk||'?'});
+    ss('live',`${res.filter(r=>r.status==='fulfilled').length} маршрута`); toast('✓ Готово','ok');
+  }catch(e){if(isNet(e)){ov(false);disBtn(false);demoAB(types,sa,ea);return;} ss('err','Ошибка');toast(e.message,'bad');}
+  finally{ov(false);disBtn(false);}
+}
+
+async function genRing(types){
+  const sa=document.getElementById('ri').value.trim(), km=parseInt(document.getElementById('ds').value)||50;
+  if(!sa){toast('Введи точку старта','bad');return;}
+  ss('spin','Строю...');disBtn(true);ov(true,'Геокодирование...');skels(3);
+  try{
+    const sc=await geocode(sa);
+    const azs=[selDir,(selDir+22)%360,(selDir+338)%360];
+    ov(true,`Строю 3 кольца (${DN[String(selDir)]} ±22°)...`);
+    const res=await Promise.allSettled(azs.map((az,i)=>{
+      const t=types[i%types.length], pp=calcPull(sc[1],sc[0],az,km);
+      return fetchRoute([sc,pp,sc],PR[t]).then(d=>({t,az,s:xStats(d)}));
+    }));
+    routes={};mapRoutes=[];mapHidden={};
+    res.forEach((r,i)=>{
+      const k=`r${i}`;
+      if(r.status==='fulfilled'){const{t,az,s}=r.value;routes[k]={t,k,dl:getDL(az),s};mapRoutes.push({key:k,color:CL[t],lc:s.lc});}
+      else{routes[`r${i}`]={k:`r${i}`,t:types[i%types.length],err:r.reason?.message||'Ошибка'};}
+    });
+    drawMap();drawRingCards(['r0','r1','r2'],sa);buildLegRing(['r0','r1','r2']);
+    saveH({mode:'ring',from:sa,dir:selDir,distKm:km,types,dist:Object.values(routes).find(r=>r.s)?.s?.dk||'?'});
+    ss('live','3 кольца'); toast('✓ Готово','ok');
+  }catch(e){if(isNet(e)){ov(false);disBtn(false);demoRing(sa,km);return;} ss('err','Ошибка');toast(e.message,'bad');}
+  finally{ov(false);disBtn(false);}
+}
+
+function calcPull(lat,lon,az,km){
+  const R=6371,d=km*.38,a=az*Math.PI/180,p1=lat*Math.PI/180,l1=lon*Math.PI/180;
+  const p2=Math.asin(Math.sin(p1)*Math.cos(d/R)+Math.cos(p1)*Math.sin(d/R)*Math.cos(a));
+  const l2=l1+Math.atan2(Math.sin(a)*Math.sin(d/R)*Math.cos(p1),Math.cos(d/R)-Math.sin(p1)*Math.sin(p2));
+  return[l2*180/Math.PI,p2*180/Math.PI];
+}
+function getDL(az){return[{m:22.5,l:'С'},{m:67.5,l:'СВ'},{m:112.5,l:'В'},{m:157.5,l:'ЮВ'},{m:202.5,l:'Ю'},{m:247.5,l:'ЮЗ'},{m:292.5,l:'З'},{m:337.5,l:'СЗ'},{m:360,l:'С'}].find(x=>az<x.m)?.l||'С';}
+
+/* ── DEMO DATA ──────────────────────────────── */
+const DA={
+  road:{dk:'31.8',sp:26,eg:85,tm:'1:13',ep:[12,11,10,11,13,15,18,16,14,12,15,18,20,18,15,13,11,10,12],dp:[0,1.7,3.4,5,6.7,8.4,10,11.7,13.4,15,16.7,18.4,20,21.7,23.4,25,26.7,28.4,31.8],lc:[[59.942,30.315],[59.930,30.280],[59.916,30.242],[59.902,30.202],[59.888,30.160],[59.874,30.118],[59.860,30.076],[59.846,30.034],[59.832,29.994],[59.882,29.904]]},
+  gravel:{dk:'38.4',sp:19,eg:210,tm:'2:01',ep:[12,22,38,58,82,105,115,118,108,88,65,45,28,18,14,12],dp:[0,2.5,5,7.5,10,12.5,15,17.5,20,22.5,25,27.5,30,32.5,35,38.4],lc:[[59.942,30.315],[59.958,30.298],[59.972,30.275],[59.982,30.248],[59.985,30.155],[59.975,30.126],[59.960,30.100],[59.944,30.076],[59.928,30.054],[59.910,30.032],[59.882,29.904]]},
+  mixed:{dk:'34.2',sp:22,eg:145,tm:'1:33',ep:[12,16,22,30,42,52,54,46,35,26,19,15,13,12],dp:[0,2.6,5.2,7.8,10.4,13,15.6,18.2,20.8,23.4,26,28.6,31.2,34.2],lc:[[59.942,30.315],[59.936,30.292],[59.928,30.266],[59.919,30.240],[59.910,30.214],[59.900,30.188],[59.891,30.162],[59.882,30.136],[59.862,30.086],[59.842,30.044],[59.882,29.904]]}
+};
+const DR=[
+  {dk:'47.2',sp:24,eg:180,tm:'1:58',dl:'С',t:'road',ep:[12,22,38,55,78,85,78,55,38,22,12,16,22,12],dp:[0,3.5,7,10.5,14,17.5,21,24.5,28,31.5,35,38.5,42,47.2],lc:[[59.942,30.315],[59.965,30.300],[59.985,30.260],[60.000,30.210],[60.006,30.100],[59.994,30.055],[59.974,30.025],[59.952,30.010],[59.930,30.020],[59.912,30.042],[59.906,30.205],[59.918,30.248],[59.942,30.315]]},
+  {dk:'50.8',sp:20,eg:350,tm:'2:32',dl:'СВ',t:'gravel',ep:[12,30,65,110,155,168,155,110,65,30,15,12],dp:[0,4.6,9.2,13.8,18.4,23,27.6,32.2,36.8,41.4,46,50.8],lc:[[59.942,30.315],[59.956,30.345],[59.968,30.378],[59.976,30.412],[59.978,30.484],[59.970,30.516],[59.938,30.558],[59.898,30.554],[59.848,30.408],[59.864,30.344],[59.912,30.312],[59.942,30.315]]},
+  {dk:'43.5',sp:22,eg:240,tm:'1:58',dl:'СЗ',t:'mixed',ep:[12,20,38,62,82,86,78,56,34,20,14,12],dp:[0,3.9,7.8,11.7,15.6,19.5,23.4,27.3,31.2,35.1,39,43.5],lc:[[59.942,30.315],[59.930,30.338],[59.916,30.358],[59.884,30.386],[59.852,30.390],[59.826,30.362],[59.816,30.315],[59.832,30.248],[59.862,30.226],[59.898,30.232],[59.934,30.295],[59.942,30.315]]}
+];
+function demoAB(types,sa,ea){
+  document.getElementById('dbn').classList.add('on'); ss('','ДЕМО');
+  routes={};mapRoutes=[];mapHidden={};
+  types.forEach(t=>{const d=DA[t];if(!d)return;routes[t]={t,s:{...d,lc:d.lc}};mapRoutes.push({key:t,color:CL[t],lc:d.lc,demo:true});});
+  drawMap();drawCards(types,sa||'СПб',ea||'Петергоф',true);buildLeg(types);
+}
+function demoRing(sa){
+  document.getElementById('dbn').classList.add('on'); ss('','ДЕМО');
+  routes={};mapRoutes=[];mapHidden={};
+  DR.forEach((d,i)=>{const k=`r${i}`;routes[k]={t:d.t,k,dl:d.dl,s:{...d,lc:d.lc}};mapRoutes.push({key:k,color:CL[d.t],lc:d.lc,demo:true});});
+  drawMap();drawRingCards(['r0','r1','r2'],sa||'СПб');buildLegRing(['r0','r1','r2']);
+}
+
+/* ── CARDS ──────────────────────────────────── */
+function drawCards(types,fn,tn2,demo){
+  const g=document.getElementById('rg'); g.innerHTML=''; g.className=`rgrid c${Math.min(types.length,3)}`;
+  document.getElementById('rpm').textContent=`${types.length} вариант(а) · ${fn} → ${tn2}${demo?' · ДЕМО':''}`;
+  types.forEach((t,i)=>{const r=routes[t];if(r)mkCard(g,t,t,r,i,{sub:`${fn} → ${tn2}`});});
+  setGL(g); setTimeout(()=>redrawE(types),120);
+}
+function drawRingCards(keys,sa){
+  const g=document.getElementById('rg'); g.innerHTML=''; g.className='rgrid c3';
+  document.getElementById('rpm').textContent=`3 кольца · ${sa} · ${DN[String(selDir)]||'С'} ±22°`;
+  keys.forEach((k,i)=>{const r=routes[k];if(r)mkCard(g,k,r.t||'road',r,i,{sub:`Кольцо · ${r.dl||'?'}`,isR:true});});
+  setGL(g); setTimeout(()=>redrawE(keys),120);
+}
+function redrawE(keys){keys.forEach(k=>{const r=routes[k];if(r?.s)drawElev(`ec_${k}`,r.s.ep,r.s.dp,CL[r.t||'road']);});}
+
+function mkCard(g,key,t,route,idx,opts){
+  if(route.err){const d=document.createElement('div');d.className='err-card';d.innerHTML=`⚠️ Маршрут недоступен<br><span style="color:#ef4444;font-size:9px">${route.err}</span>`;g.appendChild(d);return;}
+  const{s}=route, m2=MT[t]||MT.road, sf=SF[t]||SF.road;
+  const nm=opts.isR?`${route.dl||'?'} · ${tn(t)}`:tn(t);
+  const sb=sf.map(x=>`<div class="ss" style="width:${x.p}%;background:${x.c}"></div>`).join('');
+  const sl=sf.map(x=>`<span class="sl2"><span class="sd" style="background:${x.c}"></span>${x.l} ${x.p}%</span>`).join('');
+  const card=document.createElement('div'); card.className='rcard'; card.style.animationDelay=`${idx*.07}s`; card.dataset.key=key;
+  card.innerHTML=`<div class="ctop"><span class="badge ${m2.b}">${m2.l}</span></div><div class="cname">${nm}</div><div class="csub">${opts.sub}</div><div class="cstats"><div class="cs"><div class="csv" style="color:${CL[t]}">${s.dk}</div><div class="csl">КМ</div></div><div class="cs"><div class="csv">${s.tm}</div><div class="csl">ЧЧ:ММ</div></div><div class="cs"><div class="csv">${s.sp}</div><div class="csl">КМ/Ч</div></div></div><div class="ewrap"><canvas id="ec_${key}"></canvas></div><div class="cdesc">${buildD(t,s)}</div><div class="sbar">${sb}</div><div class="slbs">${sl}</div><div class="cfoot"><button class="bf pri" data-a="gpx" data-k="${key}">⬇ GPX</button><button class="bf sec" data-a="foc" data-k="${key}">🗺 На карте</button></div>`;
+  card.addEventListener('click',e=>{if(e.target.closest('[data-a]'))return; document.querySelectorAll('.rcard').forEach(c=>c.classList.remove('sel')); card.classList.add('sel');});
+  g.appendChild(card);
+}
+function setGL(g){g.onclick=e=>{const b=e.target.closest('[data-a]');if(!b)return;e.stopPropagation();const{a,k}=b.dataset;if(a==='gpx')dlGPX(k);if(a==='foc'){const r=routes[k];if(r?.s){mapHidden={};document.querySelectorAll('.li').forEach(x=>x.classList.remove('off'));drawMap();toast(`${r.s.dk} км · ${r.s.tm} · ▲${r.s.eg}м`);}};};}
+function tn(t){return{road:'Шоссейный маршрут',gravel:'Гравийный маршрут',mixed:'Смешанный маршрут',mtb:'МТБ-маршрут'}[t]||'Маршрут';}
+function buildD(t,s){const e=s.eg,rl=e<150?'ровный рельеф':e<350?'умеренный набор':e<600?'значительный набор':'горный рельеф',sf={road:'асфальт',gravel:'грунт/гравий',mixed:'асфальт+дорожки',mtb:'тропы/грунт'}[t],dif=e<200?'лёгкий':e<400?'средний':e<700?'тяжёлый':'экстремальный';return`<b>${sf}</b> · ${rl} · ▲${e} м · уровень: <b>${dif}</b>`;}
+
+/* ── LEGEND ─────────────────────────────────── */
+function buildLeg(types){
+  const el=document.getElementById('mleg'); el.innerHTML='';
+  types.forEach(t=>{const i=document.createElement('div');i.className='li';i.innerHTML=`<div class="lln" style="background:${CL[t]}"></div>${MT[t]?.l||t}`;i.addEventListener('click',()=>{mapHidden[t]=!mapHidden[t];i.classList.toggle('off',!!mapHidden[t]);drawMap();});el.appendChild(i);});
+  el.classList.add('on');
+}
+function buildLegRing(keys){
+  const el=document.getElementById('mleg'); el.innerHTML='';
+  keys.forEach(k=>{const r=routes[k];if(!r||r.err)return;const i=document.createElement('div');i.className='li';i.innerHTML=`<div class="lln" style="background:${CL[r.t||'road']}"></div>${r.dl||'?'} · ${MT[r.t||'road']?.l||r.t}`;i.addEventListener('click',()=>{mapHidden[k]=!mapHidden[k];i.classList.toggle('off',!!mapHidden[k]);drawMap();});el.appendChild(i);});
+  el.classList.add('on');
+}
+
+/* ── GPX EXPORT ─────────────────────────────── */
+function dlGPX(k){
+  const r=routes[k]; if(!r?.s){toast('Нет данных','bad');return;}
+  const{s,t}=r, nm=tn(t||'road'), base=Date.now();
+  const pts=s.lc.map((c,i)=>`    <trkpt lat="${c[0].toFixed(6)}" lon="${c[1].toFixed(6)}">
+      <ele>0</ele>
+      <time>${new Date(base+i*5000).toISOString()}</time>
+    </trkpt>`).join('\n');
+  const gpx=`<?xml version="1.0" encoding="UTF-8"?>
+<gpx version="1.1" creator="VeloRoute Planner" xmlns="http://www.topografix.com/GPX/1/1">
+  <metadata><name>${nm}</name><time>${new Date(base).toISOString()}</time></metadata>
+  <trk><name>${nm}</name><type>${t||'cycling'}</type><trkseg>
+${pts}
+  </trkseg></trk>
+</gpx>`;
+  const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([gpx],{type:'application/gpx+xml'})); a.download=`${t||'route'}_${s.dk}km.gpx`; a.click(); URL.revokeObjectURL(a.href);
+  toast(`✓ GPX: ${s.dk} км сохранён`,'ok');
+}
+
+/* ── HISTORY ────────────────────────────────── */
+const HK='vr_v7';
+function saveH(e){try{const h=JSON.parse(localStorage.getItem(HK)||'[]');h.unshift({id:Date.now(),mode:e.mode,from:e.from,to:e.to||null,dir:e.dir??null,distKm:e.distKm||null,types:e.types,date:new Date().toLocaleDateString('ru'),dist:e.dist});localStorage.setItem(HK,JSON.stringify(h.slice(0,5)));rndH();}catch(x){}}
+function rndH(){try{const h=JSON.parse(localStorage.getItem(HK)||'[]');const list=document.getElementById('hl');if(!h.length){list.innerHTML='<span style="font-size:10px;color:#6b7280">Нет истории</span>';return;}list.innerHTML='';h.forEach(item=>{const el=document.createElement('div');el.className='hi';const icons=(item.types||[]).map(t=>({road:'🛣️',gravel:'🌲',mixed:'🔀',mtb:'⛰️'}[t]||'·')).join('');const route=item.mode==='ring'?`${item.from} · ${DN[String(item.dir)]||'?'}`:`${item.from} → ${item.to||'?'}`;el.innerHTML=`<div class="hi-m">${item.mode==='ring'?'🔄 КОЛЬЦО':'↗ A→B'} · ${item.date}</div><div class="hi-r">${route}</div><div class="hi-d">${icons} ~${item.dist} км</div>`;el.addEventListener('click',()=>restH(item));list.appendChild(el);});}catch(x){}}
+function restH(h){
+  document.querySelectorAll('.mtab').forEach(t=>t.classList.remove('active'));
+  document.querySelector(`.mtab[data-mode="${h.mode}"]`).classList.add('active');
+  document.getElementById('app').className=`app mode-${h.mode}`; mode=h.mode;
+  if(h.mode==='ab'){if(h.from)document.getElementById('si').value=h.from;if(h.to)document.getElementById('ei').value=h.to;}
+  else{if(h.from)document.getElementById('ri').value=h.from;if(h.dir!=null){selDir=h.dir;document.querySelectorAll('.cdir').forEach(b=>b.classList.toggle('active',parseInt(b.dataset.dir)===h.dir));document.getElementById('cLbl').textContent=DN[String(h.dir)]||'С';document.getElementById('cDeg').textContent=h.dir+'°';}if(h.distKm){document.getElementById('ds').value=h.distKm;document.getElementById('dv').textContent=h.distKm;}}
+  if(h.types)document.querySelectorAll('.tbtn').forEach(b=>b.classList.toggle('active',h.types.includes(b.dataset.type)));
+  toast('Параметры восстановлены','ok');
+}
+
+/* ── GEOLOCATION ────────────────────────────── */
+function useGeo(id){if(!navigator.geolocation){toast('Геолокация недоступна','bad');return;}navigator.geolocation.getCurrentPosition(p=>{document.getElementById(id).value=`${p.coords.latitude.toFixed(5)},${p.coords.longitude.toFixed(5)}`;toast('✓ Местоположение определено','ok');},()=>toast('Нет доступа к геолокации','bad'));}
+
+/* ── UI HELPERS ─────────────────────────────── */
+function ss(s,t){const d=document.getElementById('dot'),el=document.getElementById('stxt');d.className='sdot'+(s==='live'?' live':s==='spin'?' spin':s==='err'?' err':'');el.textContent=t;}
+function disBtn(v){const b=document.getElementById('genBtn');b.disabled=v;b.textContent=v?'⏳ СТРОЮ...':'ПОСТРОИТЬ МАРШРУТЫ';}
+function ov(v,txt){document.getElementById('ovt').textContent=txt||'';document.getElementById('mov').classList.toggle('on',v);}
+function skels(n){const g=document.getElementById('rg');g.className=`rgrid c${Math.min(n,3)}`;g.innerHTML=Array(n).fill(0).map(()=>`<div class="skel"><div class="sk" style="height:11px;width:70px"></div><div class="sk" style="height:14px;width:55%;margin-top:5px"></div><div class="sk" style="height:36px;margin-top:7px"></div><div class="sk" style="height:58px;margin-top:6px"></div><div class="sk" style="height:30px;margin-top:6px"></div><div class="sk" style="height:38px;margin-top:5px"></div></div>`).join('');}
+let _tt;
+function toast(msg,cls){const t=document.getElementById('toast');t.textContent=msg;t.className=`toast on${cls?' '+cls:''}`;clearTimeout(_tt);_tt=setTimeout(()=>t.classList.remove('on'),3200);}
+
+/* ── EVENTS ─────────────────────────────────── */
+document.querySelectorAll('.mtab').forEach(tab=>tab.addEventListener('click',()=>{
+  document.querySelectorAll('.mtab').forEach(t=>t.classList.remove('active')); tab.classList.add('active');
+  mode=tab.dataset.mode; document.getElementById('app').className=`app mode-${mode}`;
+}));
+document.querySelectorAll('.tbtn').forEach(b=>b.addEventListener('click',()=>b.classList.toggle('active')));
+document.getElementById('ints').addEventListener('input',function(){document.getElementById('iLbl').textContent=INT[this.value-1];});
+document.getElementById('ds').addEventListener('input',function(){document.getElementById('dv').textContent=this.value;});
+document.querySelectorAll('.cdir').forEach(btn=>btn.addEventListener('click',()=>{
+  document.querySelectorAll('.cdir').forEach(b=>b.classList.remove('active')); btn.classList.add('active');
+  selDir=parseInt(btn.dataset.dir); document.getElementById('cLbl').textContent=btn.dataset.lbl; document.getElementById('cDeg').textContent=selDir+'°';
+}));
+document.getElementById('gb1').addEventListener('click',()=>useGeo('si'));
+document.getElementById('gb2').addEventListener('click',()=>useGeo('ri'));
+document.getElementById('genBtn').addEventListener('click',generate);
+document.getElementById('ei').addEventListener('keydown',e=>{if(e.key==='Enter')generate();});
+document.getElementById('swp').addEventListener('click',()=>{const s=document.getElementById('si'),e=document.getElementById('ei');[s.value,e.value]=[e.value,s.value];});
+let _wc=0;
+document.getElementById('addW').addEventListener('click',()=>{
+  if(document.querySelectorAll('.wpt-i').length>=3){toast('Максимум 3 промежуточные точки','');return;}
+  _wc++; const wrap=document.getElementById('wptsWrap'); const cur=document.querySelectorAll('.wpt-i').length;
+  const row=document.createElement('div'); row.className='wrow'; row.id=`wr_${_wc}`;
+  row.innerHTML=`<div class="ptm" style="background:#1a1d2e;border:1px solid #252840;color:#6b7280;font-size:10px">${cur+1}</div><input class="ifl wpt-i" placeholder="Промежуточная точка..."><button class="wdel">×</button>`;
+  wrap.appendChild(row);
+  row.querySelector('.wdel').addEventListener('click',()=>{row.remove();document.querySelectorAll('.wrow .ptm').forEach((m,i)=>m.textContent=i+1);});
+  row.querySelector('.wpt-i').focus();
+});
+document.getElementById('ghBtn').addEventListener('click',()=>document.getElementById('ghModal').classList.add('on'));
+document.getElementById('mxBtn').addEventListener('click',()=>document.getElementById('ghModal').classList.remove('on'));
+document.getElementById('mcloseBtn').addEventListener('click',()=>document.getElementById('ghModal').classList.remove('on'));
+document.getElementById('ghModal').addEventListener('click',e=>{if(e.target===e.currentTarget)e.currentTarget.classList.remove('on');});
+document.getElementById('hclr').addEventListener('click',()=>{try{localStorage.removeItem(HK);rndH();toast('История очищена','');}catch(e){}});
+
+/* ── INIT ───────────────────────────────────── */
+window.addEventListener('resize',resizeCvs);
+resizeCvs();
+ss('','Готов');
+rndH();
+})();
+</script>
+</body>
+</html>
