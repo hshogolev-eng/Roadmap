@@ -1,0 +1,1371 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>VELOGERA — Smart Route Planner</title>
+<style>
+:root{--acc:#FF4500;--acc2:#FF7A3D;--grn:#22C55E;--pur:#A855F7;--amb:#F59E0B;--sky:#38BDF8;
+  --bg:#080a10;--bg2:#0f1118;--bg3:#161924;--bg4:#1e2130;--brd:#252840;
+  --txt:#E8EAF2;--mut:#6B7280;--mut2:#9CA3AF}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{background:var(--bg);color:var(--txt);font-family:-apple-system,Arial,sans-serif;min-height:600px}
+/* HEADER */
+.hdr{display:flex;align-items:center;justify-content:space-between;padding:0 16px;height:52px;background:rgba(8,10,16,.96);border-bottom:1px solid var(--brd);position:sticky;top:0;z-index:50;backdrop-filter:blur(12px);gap:8px}
+.logo{display:flex;align-items:center;gap:9px;flex-shrink:0}
+.logo-ic{width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,#FF4500,#FF7A3D);display:flex;align-items:center;justify-content:center;font-size:15px;box-shadow:0 0 12px rgba(255,69,0,.35)}
+.logo-name{font-size:18px;font-weight:800;letter-spacing:3px;background:linear-gradient(90deg,#FF4500,#FF7A3D);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.logo-sub{font-size:7px;color:var(--mut);letter-spacing:2px}
+.hdr-right{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.spill{display:flex;align-items:center;gap:5px;background:var(--bg3);border:1px solid var(--brd);border-radius:20px;padding:3px 10px;font-size:9px;color:var(--mut2);white-space:nowrap}
+.sdot{width:5px;height:5px;border-radius:50%;background:var(--mut);flex-shrink:0;transition:all .3s}
+.sdot.live{background:var(--grn);box-shadow:0 0 5px var(--grn)}.sdot.spin{background:var(--acc);animation:bl .8s infinite}.sdot.err{background:#ef4444}
+@keyframes bl{0%,100%{opacity:1}50%{opacity:.3}}
+.hbtn{background:var(--bg3);border:1px solid var(--brd);border-radius:7px;padding:5px 10px;font-size:9px;color:var(--mut2);cursor:pointer;transition:all .2s;white-space:nowrap;display:flex;align-items:center;gap:4px;min-height:28px}
+.hbtn:hover{border-color:var(--acc);color:var(--acc)}
+.hbtn.active{border-color:var(--grn);color:var(--grn);background:rgba(34,197,94,.08)}
+.hbtn.strava-btn{border-color:rgba(252,82,0,.4);color:#FC5200}
+.hbtn.strava-btn.connected{background:rgba(252,82,0,.1);border-color:#FC5200}
+/* LAYOUT */
+.layout{display:flex;height:548px;border-bottom:1px solid var(--brd)}
+/* LEFT PANEL */
+.left{width:278px;flex-shrink:0;background:var(--bg2);border-right:1px solid var(--brd);display:flex;flex-direction:column;overflow:hidden}
+.mtabs{display:grid;grid-template-columns:1fr 1fr;border-bottom:1px solid var(--brd);flex-shrink:0}
+.mtab{background:transparent;border:none;border-right:1px solid var(--brd);padding:9px 6px;font-size:11px;font-weight:700;letter-spacing:1px;color:var(--mut);cursor:pointer;transition:all .2s;min-height:38px}
+.mtab:last-child{border-right:none}
+.mtab.active{color:var(--acc);border-bottom:2px solid var(--acc);background:rgba(255,69,0,.05)}
+.pscroll{flex:1;overflow-y:auto;display:flex;flex-direction:column}
+.pscroll::-webkit-scrollbar{width:3px}
+.pscroll::-webkit-scrollbar-thumb{background:var(--brd);border-radius:2px}
+.ps{padding:10px 13px;border-bottom:1px solid var(--brd)}
+.slbl{font-size:8px;font-weight:700;letter-spacing:2px;color:var(--mut);margin-bottom:6px;text-transform:uppercase}
+.rpt{display:flex;align-items:center;gap:6px;margin-bottom:4px}
+.ptm{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0}
+.ptA{background:var(--grn);color:#000}.ptB{background:var(--acc);color:#fff}
+.ifl{flex:1;background:var(--bg4);border:1px solid var(--brd);border-radius:7px;padding:6px 9px;color:var(--txt);font-size:12px;outline:none;min-height:32px;transition:border-color .2s}
+.ifl:focus{border-color:var(--acc)}.ifl::placeholder{color:var(--mut)}
+.gbt{width:30px;height:30px;background:var(--bg4);border:1px solid var(--brd);border-radius:7px;color:var(--mut2);cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .2s;min-height:30px}
+.gbt:hover{border-color:var(--acc);color:var(--acc)}
+.cl{width:2px;height:6px;background:var(--brd);margin:1px 0 1px 10px;border-radius:1px}
+.wrow{display:flex;align-items:center;gap:6px;margin-bottom:4px}
+.wnum{width:20px;height:20px;border-radius:50%;background:var(--bg4);border:1px solid var(--brd);color:var(--mut);font-size:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:700}
+.wdel{width:20px;height:20px;border-radius:50%;background:transparent;border:1px solid var(--brd);color:var(--mut);font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;flex-shrink:0;min-height:20px}
+.wdel:hover{border-color:#ef4444;color:#ef4444}
+.rbtns{display:flex;gap:5px;margin-top:6px}
+.bsm{flex:1;padding:5px 4px;min-height:28px;border-radius:6px;font-size:9px;cursor:pointer;border:1px solid var(--brd);background:var(--bg4);color:var(--mut);transition:all .2s;font-weight:600}
+.bsm:hover{border-color:var(--acc);color:var(--acc)}
+/* COMPASS */
+.crose{position:relative;width:116px;height:116px;margin:5px auto 4px}
+.crbg{position:absolute;inset:0;border-radius:50%;border:1px solid var(--brd);background:radial-gradient(circle,var(--bg4) 0%,var(--bg3) 100%)}
+.crcen{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:30px;height:30px;border-radius:50%;background:var(--bg);border:1px solid var(--brd);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:2}
+.cclbl{font-size:11px;font-weight:800;color:var(--acc);line-height:1}
+.ccdeg{font-size:7px;color:var(--mut);line-height:1}
+.cdir{position:absolute;width:22px;height:22px;border-radius:50%;background:var(--bg4);border:1px solid var(--brd);color:var(--mut);font-size:8px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;transform:translate(-50%,-50%);z-index:1;transition:all .2s;min-height:22px}
+.cdir:hover{border-color:var(--acc);color:var(--acc)}
+.cdir.active{background:var(--acc);border-color:var(--acc);color:#fff;box-shadow:0 0 8px rgba(255,69,0,.4)}
+.cdir[data-dir="0"]{top:15px;left:58px}.cdir[data-dir="45"]{top:26px;left:89px}.cdir[data-dir="90"]{top:58px;left:100px}
+.cdir[data-dir="135"]{top:89px;left:89px}.cdir[data-dir="180"]{top:100px;left:58px}.cdir[data-dir="225"]{top:89px;left:26px}
+.cdir[data-dir="270"]{top:58px;left:15px}.cdir[data-dir="315"]{top:26px;left:26px}
+.dval{font-size:22px;font-weight:800;color:var(--acc)}
+.dkm{font-size:9px;color:var(--mut)}
+input[type=range]{width:100%;-webkit-appearance:none;height:4px;background:var(--brd);border-radius:2px;outline:none;cursor:pointer;margin:4px 0}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;background:#fff;border-radius:50%;box-shadow:0 0 0 3px var(--acc);cursor:grab}
+input[type=range]::-moz-range-thumb{width:16px;height:16px;background:#fff;border-radius:50%;box-shadow:0 0 0 3px var(--acc);border:none}
+.rlbls{display:flex;justify-content:space-between;font-size:8px;color:var(--mut);margin-top:3px}
+.tgrid{display:grid;grid-template-columns:1fr 1fr;gap:4px}
+.tbtn{background:var(--bg4);border:1px solid var(--brd);border-radius:7px;padding:7px 4px;cursor:pointer;text-align:center;color:var(--mut);font-size:9px;min-height:40px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;user-select:none;transition:all .2s}
+.tibig{font-size:14px;line-height:1}
+.tbtn.active{border-color:var(--acc);background:rgba(255,69,0,.1);color:var(--acc)}
+.tbtn:hover:not(.active){border-color:var(--mut2);color:var(--txt)}
+/* WEATHER WIDGET */
+.wx-row{display:flex;align-items:center;gap:7px;margin-bottom:5px;flex-wrap:wrap}
+.wx-date{flex:1;background:var(--bg4);border:1px solid var(--brd);border-radius:7px;padding:5px 9px;color:var(--txt);font-size:11px;outline:none;min-height:30px;cursor:pointer}
+.wx-date:focus{border-color:var(--sky)}
+.wx-card{background:var(--bg4);border:1px solid var(--brd);border-radius:8px;padding:8px 10px;display:none;margin-top:4px}
+.wx-card.on{display:block}
+.wx-main{display:flex;align-items:center;gap:8px}
+.wx-icon{font-size:24px}
+.wx-temp{font-size:20px;font-weight:700;color:var(--sky)}
+.wx-desc{font-size:10px;color:var(--mut2);margin-top:1px}
+.wx-details{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;margin-top:6px}
+.wx-d{text-align:center}
+.wx-dv{font-size:11px;font-weight:600;color:var(--txt)}
+.wx-dl{font-size:8px;color:var(--mut)}
+.wx-warn{font-size:9px;color:var(--amb);margin-top:5px;display:none}
+.wx-warn.on{display:block}
+.wx-key-row{display:flex;gap:5px;margin-top:5px}
+.wx-key{flex:1;background:var(--bg4);border:1px solid var(--brd);border-radius:5px;padding:4px 7px;color:var(--txt);font-size:10px;outline:none;min-height:26px}
+.wx-key:focus{border-color:var(--sky)}
+.wx-save{background:var(--bg3);border:1px solid var(--brd);border-radius:5px;padding:4px 8px;font-size:9px;color:var(--mut2);cursor:pointer;transition:all .2s;white-space:nowrap}
+.wx-save:hover{border-color:var(--sky);color:var(--sky)}
+/* STRAVA PANEL */
+.str-card{background:rgba(252,82,0,.06);border:1px solid rgba(252,82,0,.25);border-radius:8px;padding:8px 10px;margin-top:4px;display:none}
+.str-card.on{display:block}
+.str-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:5px}
+.str-name{font-size:11px;font-weight:600;color:var(--txt)}
+.str-ftp{font-size:9px;color:#FC5200;font-weight:700}
+.str-act{font-size:9px;color:var(--mut);margin-top:2px}
+.str-list{margin-top:6px;display:flex;flex-direction:column;gap:3px;max-height:80px;overflow-y:auto}
+.str-item{background:var(--bg3);border-radius:5px;padding:4px 7px;font-size:9px;color:var(--mut2);display:flex;justify-content:space-between}
+/* GEN BTN */
+.pgrow{padding:10px 13px 12px;flex-shrink:0}
+.genbtn{width:100%;background:linear-gradient(135deg,var(--acc),var(--acc2));color:#fff;border:none;border-radius:9px;padding:12px;font-size:13px;font-weight:800;letter-spacing:2px;cursor:pointer;transition:all .2s;min-height:44px;box-shadow:0 4px 16px rgba(255,69,0,.3)}
+.genbtn:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 6px 20px rgba(255,69,0,.4)}
+.genbtn:disabled{opacity:.6;cursor:not-allowed;transform:none;box-shadow:none}
+.mab,.mring{display:none}
+.app.mode-ab .mab{display:block}.app.mode-ring .mring{display:block}
+/* MAP */
+.mapw{flex:1;position:relative;overflow:hidden;background:#0a0c14}
+#vcanvas{position:absolute;inset:0;display:block}
+#hcanvas{position:absolute;inset:0;display:block;pointer-events:none;z-index:2}
+.mleg{display:none;position:absolute;top:10px;right:10px;background:rgba(8,10,16,.9);border:1px solid var(--brd);border-radius:8px;padding:7px 11px;z-index:5;backdrop-filter:blur(8px)}
+.mleg.on{display:block}
+.li{display:flex;align-items:center;gap:6px;font-size:9px;color:var(--txt);margin-bottom:4px;cursor:pointer;user-select:none;min-height:18px;transition:opacity .2s}
+.li:last-child{margin-bottom:0}.li.off{opacity:.3}
+.lln{width:12px;height:3px;border-radius:1px;flex-shrink:0}
+.dbanner{display:none;position:absolute;bottom:10px;left:50%;transform:translateX(-50%);background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.35);border-radius:6px;padding:5px 12px;font-size:9px;color:var(--amb);white-space:nowrap;z-index:5}
+.dbanner.on{display:block}
+.mov{display:none;position:absolute;inset:0;background:rgba(8,10,16,.8);z-index:10;align-items:center;justify-content:center;flex-direction:column;gap:10px}
+.mov.on{display:flex}
+.spin2{width:28px;height:28px;border:2px solid var(--brd);border-top-color:var(--acc);border-radius:50%;animation:sp .7s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+.ovt{font-size:9px;color:var(--mut2);letter-spacing:1px}
+/* CARDS */
+.rcards{padding:14px 18px 18px;background:var(--bg)}
+.rph{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.rptitle{font-size:14px;font-weight:800;letter-spacing:2px}
+.rpm{font-size:9px;color:var(--mut)}
+.rgrid{display:grid;gap:10px}
+.rgrid.c1{grid-template-columns:minmax(0,420px)}.rgrid.c2{grid-template-columns:repeat(2,minmax(0,1fr))}.rgrid.c3{grid-template-columns:repeat(3,minmax(0,1fr))}.rgrid.c4{grid-template-columns:repeat(4,minmax(0,1fr))}
+.skel{background:var(--bg2);border:1px solid var(--brd);border-radius:10px;padding:14px;height:220px;display:flex;flex-direction:column;gap:6px}
+.sk{background:linear-gradient(90deg,var(--bg3) 25%,var(--bg4) 50%,var(--bg3) 75%);background-size:200% 100%;border-radius:3px;animation:sh 1.4s ease infinite}
+@keyframes sh{to{background-position:-200% 0}}
+.rcard{background:var(--bg2);border:1px solid var(--brd);border-radius:10px;overflow:hidden;cursor:pointer;transition:border-color .2s,transform .15s,box-shadow .2s;animation:fu .3s ease both}
+@keyframes fu{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.rcard:nth-child(2){animation-delay:.06s}.rcard:nth-child(3){animation-delay:.12s}.rcard:nth-child(4){animation-delay:.18s}
+.rcard.sel{border-color:var(--acc);box-shadow:0 0 0 1px var(--acc),0 4px 20px rgba(255,69,0,.15)}
+.rcard:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(0,0,0,.4)}
+.ctop{padding:8px 12px 3px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:4px}
+.badge{font-size:8px;padding:2px 7px;border-radius:20px;font-weight:700;letter-spacing:.5px}
+.br{background:rgba(255,69,0,.15);color:var(--acc);border:1px solid rgba(255,69,0,.3)}
+.bg{background:rgba(34,197,94,.15);color:var(--grn);border:1px solid rgba(34,197,94,.3)}
+.bm{background:rgba(168,85,247,.15);color:var(--pur);border:1px solid rgba(168,85,247,.3)}
+.bt{background:rgba(245,158,11,.15);color:var(--amb);border:1px solid rgba(245,158,11,.3)}
+.diff-easy{background:rgba(34,197,94,.1);color:var(--grn);border:1px solid rgba(34,197,94,.25);font-size:8px;padding:2px 6px;border-radius:20px;font-weight:700}
+.diff-med{background:rgba(245,158,11,.1);color:var(--amb);border:1px solid rgba(245,158,11,.25);font-size:8px;padding:2px 6px;border-radius:20px;font-weight:700}
+.diff-hard{background:rgba(249,115,22,.1);color:#f97316;border:1px solid rgba(249,115,22,.25);font-size:8px;padding:2px 6px;border-radius:20px;font-weight:700}
+.diff-ext{background:rgba(239,68,68,.1);color:#ef4444;border:1px solid rgba(239,68,68,.25);font-size:8px;padding:2px 6px;border-radius:20px;font-weight:700}
+.fav-btn{background:none;border:none;font-size:14px;cursor:pointer;padding:2px;line-height:1;transition:transform .2s;flex-shrink:0}
+.fav-btn:hover{transform:scale(1.3)}
+.cname{font-size:13px;font-weight:700;padding:0 12px 2px;color:var(--txt);letter-spacing:.5px}
+.csub{font-size:8px;color:var(--mut);padding:0 12px 5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cstats{display:grid;grid-template-columns:1fr 1fr 1fr;border-top:1px solid var(--brd);border-bottom:1px solid var(--brd)}
+.cs{padding:6px 3px;text-align:center;border-right:1px solid var(--brd)}
+.cs:last-child{border-right:none}
+.csv{font-size:14px;font-weight:700;line-height:1}
+.csl{font-size:7px;color:var(--mut);margin-top:2px;letter-spacing:.3px}
+.ewrap{padding:5px 10px 3px;position:relative}
+.ewrap canvas{display:block;width:100%;height:58px;cursor:crosshair}
+.ehover{position:absolute;top:5px;bottom:3px;width:1px;background:rgba(255,255,255,.4);pointer-events:none;display:none}
+.etip{position:absolute;bottom:14px;background:var(--bg);border:1px solid var(--brd);border-radius:4px;padding:2px 6px;font-size:8px;color:var(--txt);white-space:nowrap;pointer-events:none;display:none;transform:translateX(-50%)}
+.cdesc-toggle{display:flex;align-items:center;justify-content:space-between;padding:5px 12px;cursor:pointer;border-top:1px solid var(--brd);user-select:none;transition:background .2s}
+.cdesc-toggle:hover{background:rgba(255,255,255,.03)}
+.cdesc-toggle span{font-size:8px;color:var(--mut);font-weight:600;letter-spacing:.5px;text-transform:uppercase}
+.cdesc-toggle .arr{font-size:8px;color:var(--mut);transition:transform .2s;display:inline-block}
+.cdesc-toggle .arr.open{transform:rotate(180deg)}
+.cdesc-wrap{overflow:hidden;max-height:0;transition:max-height .3s ease}
+.cdesc-wrap.open{max-height:500px}
+.cdesc-body{padding:8px 12px 10px;font-size:10px;color:var(--mut2);line-height:1.6;border-bottom:1px solid var(--brd)}
+.cdesc-body b{color:var(--txt)}
+.dsec{margin-bottom:6px}.dsec:last-child{margin-bottom:0}
+.poi-list{margin-top:6px;display:flex;flex-direction:column;gap:5px}
+.poi-item{background:var(--bg3);border:1px solid var(--brd);border-radius:6px;padding:6px 9px;display:flex;align-items:center;justify-content:space-between;gap:6px}
+.poi-info{flex:1;min-width:0}
+.poi-name{font-size:10px;font-weight:600;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.poi-meta{font-size:8px;color:var(--mut);margin-top:1px}
+.poi-add{background:var(--bg4);border:1px solid var(--brd);border-radius:5px;padding:3px 8px;font-size:8px;color:var(--mut2);cursor:pointer;white-space:nowrap;transition:all .2s;flex-shrink:0}
+.poi-add:hover{border-color:var(--acc);color:var(--acc)}
+.poi-add.added{border-color:var(--grn);color:var(--grn);cursor:default}
+.sbar{margin:0 10px 2px;height:3px;border-radius:2px;overflow:hidden;display:flex;gap:1px}
+.ss{height:100%}
+.slbs{display:flex;flex-wrap:wrap;gap:3px;padding:2px 10px 6px}
+.sl2{font-size:7px;color:var(--mut);display:flex;align-items:center;gap:2px}
+.sd{width:4px;height:4px;border-radius:50%;flex-shrink:0}
+.cfoot{display:flex;gap:5px;padding:7px 10px;background:var(--bg3)}
+.bf{flex:1;min-height:34px;border-radius:7px;font-size:9px;font-weight:600;cursor:pointer;border:1px solid var(--brd);display:flex;align-items:center;justify-content:center;gap:3px;transition:all .2s}
+.bf.pri{background:var(--acc);color:#fff;border-color:var(--acc)}.bf.pri:hover{background:var(--acc2)}
+.bf.sec{background:transparent;color:var(--mut2)}.bf.sec:hover{color:var(--txt);border-color:var(--txt)}
+.bf.grn{background:rgba(34,197,94,.1);color:var(--grn);border-color:rgba(34,197,94,.3)}.bf.grn:hover{background:rgba(34,197,94,.2)}
+.err-card{background:var(--bg2);border:1px solid rgba(239,68,68,.3);border-radius:10px;padding:20px;text-align:center;color:var(--mut);font-size:11px}
+/* HISTORY */
+.hpanel{background:var(--bg);border-top:1px solid var(--brd)}
+.hhd{display:flex;align-items:center;justify-content:space-between;padding:7px 18px 0;cursor:default}
+.htit{font-size:10px;font-weight:700;letter-spacing:2px;color:var(--mut);text-transform:uppercase;display:flex;align-items:center;gap:6px}
+.hha{display:flex;align-items:center;gap:6px}
+.hclr{font-size:8px;color:var(--mut);background:none;border:1px solid var(--brd);border-radius:4px;cursor:pointer;padding:2px 7px;transition:all .2s}
+.hclr:hover{border-color:#ef4444;color:#ef4444}
+.htog{font-size:9px;color:var(--mut);background:none;border:none;cursor:pointer;padding:2px 5px;transition:all .2s}
+.hbody{overflow:hidden;transition:max-height .3s ease;max-height:80px}
+.hbody.collapsed{max-height:0}
+.hlist{display:flex;gap:7px;overflow-x:auto;padding:7px 18px 10px}
+.hlist::-webkit-scrollbar{height:3px}
+.hlist::-webkit-scrollbar-thumb{background:var(--brd);border-radius:2px}
+.hi{flex-shrink:0;background:var(--bg2);border:1px solid var(--brd);border-radius:7px;padding:7px 11px;cursor:pointer;transition:all .2s;min-width:115px;max-width:155px}
+.hi:hover{border-color:var(--acc)}
+.hi-m{font-size:8px;color:var(--mut);margin-bottom:2px}
+.hi-r{font-size:10px;color:var(--txt);font-weight:600;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hi-d{font-size:8px;color:var(--mut)}
+/* MODALS */
+.modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:200;align-items:center;justify-content:center;padding:16px;overflow-y:auto}
+.modal.on{display:flex}
+.mbox{background:var(--bg2);border:1px solid var(--brd);border-radius:12px;padding:22px;max-width:440px;width:100%;position:relative}
+.mbox.wide{max-width:560px}
+.mtitle{font-size:17px;font-weight:800;letter-spacing:2px;margin-bottom:4px}
+.msub{font-size:10px;color:var(--mut);margin-bottom:14px}
+.murl{background:var(--bg3);border:1px solid var(--brd);border-radius:7px;padding:9px 13px;margin-bottom:14px;font-size:11px;color:var(--grn);text-align:center;word-break:break-all}
+.msteps{display:flex;flex-direction:column;gap:8px;margin-bottom:14px}
+.step{display:flex;gap:10px;align-items:flex-start}
+.stn{width:20px;height:20px;border-radius:50%;background:var(--acc);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+.stb .stitle{font-size:12px;font-weight:600;color:var(--txt);margin-bottom:2px}
+.stb .sdet{font-size:10px;color:var(--mut);line-height:1.5}
+.stb .sdet a{color:var(--acc);text-decoration:none}
+code{background:var(--bg3);border:1px solid var(--brd);border-radius:3px;padding:1px 5px;font-size:10px;color:var(--grn)}
+.mclose{width:100%;background:var(--bg3);border:1px solid var(--brd);border-radius:7px;padding:9px;color:var(--mut);cursor:pointer;font-size:11px;transition:all .2s;margin-top:2px}
+.mclose:hover{border-color:var(--txt);color:var(--txt)}
+.mx{position:absolute;top:14px;right:14px;background:none;border:none;color:var(--mut);font-size:20px;cursor:pointer;line-height:1}
+.mx:hover{color:var(--txt)}
+/* SHARE/COPY */
+.share-url{background:var(--bg3);border:1px solid var(--brd);border-radius:7px;padding:9px 12px;font-size:10px;color:var(--grn);word-break:break-all;margin-bottom:10px;user-select:all;cursor:text}
+.share-btns{display:flex;gap:6px}
+.sbtn{flex:1;background:var(--bg3);border:1px solid var(--brd);border-radius:7px;padding:8px;font-size:10px;color:var(--mut2);cursor:pointer;transition:all .2s;text-align:center}
+.sbtn:hover{border-color:var(--acc);color:var(--acc)}
+.sbtn.copied{border-color:var(--grn);color:var(--grn)}
+/* STRAVA MODAL */
+.str-modal-fields{display:flex;flex-direction:column;gap:8px;margin-bottom:12px}
+.smf-label{font-size:9px;color:var(--mut);margin-bottom:3px;font-weight:700;letter-spacing:1px;text-transform:uppercase}
+.smf-input{width:100%;background:var(--bg3);border:1px solid var(--brd);border-radius:7px;padding:7px 10px;color:var(--txt);font-size:11px;outline:none;transition:border-color .2s}
+.smf-input:focus{border-color:#FC5200}
+.str-connect-btn{width:100%;background:#FC5200;color:#fff;border:none;border-radius:8px;padding:10px;font-size:12px;font-weight:700;cursor:pointer;transition:all .2s;margin-bottom:8px}
+.str-connect-btn:hover{background:#e04800}
+.str-token-row{display:flex;gap:6px}
+.str-token-input{flex:1;background:var(--bg3);border:1px solid var(--brd);border-radius:7px;padding:6px 9px;color:var(--txt);font-size:11px;outline:none}
+.str-token-input:focus{border-color:#FC5200}
+.str-token-save{background:var(--bg3);border:1px solid #FC5200;border-radius:7px;padding:6px 12px;color:#FC5200;font-size:10px;cursor:pointer;white-space:nowrap;transition:all .2s}
+.str-token-save:hover{background:rgba(252,82,0,.1)}
+/* PDF PRINT */
+@media print{
+  .hdr,.left,.hpanel,.modal,.toast,.mleg,.dbanner,.mov{display:none!important}
+  .layout{height:auto!important}.mapw{height:400px!important;page-break-after:always}
+  .rcards{padding:10px!important}
+  .rcard{break-inside:avoid}
+  body{background:#fff!important;color:#000!important}
+  .rcard{border:1px solid #ccc!important;background:#fff!important}
+  .cname,.rptitle{color:#000!important}
+  .csv{color:#000!important}
+  .cdesc-wrap{max-height:none!important}
+}
+/* TOAST */
+.toast{position:fixed;bottom:16px;left:50%;transform:translateX(-50%) translateY(60px);background:var(--bg3);border:1px solid var(--brd);border-radius:7px;padding:7px 14px;font-size:10px;z-index:999;transition:transform .3s;white-space:nowrap;max-width:88vw;pointer-events:none}
+.toast.on{transform:translateX(-50%) translateY(0)}
+.toast.ok{border-color:var(--grn);color:var(--grn)}.toast.bad{border-color:#ef4444;color:#ef4444}
+::-webkit-scrollbar{width:4px;height:4px}::-webkit-scrollbar-thumb{background:var(--brd);border-radius:2px}
+/* MOBILE */
+@media(max-width:800px){
+  .layout{flex-direction:column;height:auto}
+  .left{width:100%;border-right:none;border-bottom:1px solid var(--brd)}
+  .pscroll{max-height:260px}
+  .mapw{height:280px;flex-shrink:0}
+  .logo-sub{display:none}
+  .rgrid.c2,.rgrid.c3,.rgrid.c4{grid-template-columns:1fr}
+  .rcards,.hhd{padding-left:14px;padding-right:14px}
+  .hlist{padding-left:14px;padding-right:14px}
+  .hbtn span{display:none}
+}
+</style>
+</head>
+<body>
+<div class="app mode-ab" id="app">
+
+<header class="hdr">
+  <div class="logo">
+    <div class="logo-ic">🚴</div>
+    <div>
+      <div class="logo-name">VELOGERA</div>
+      <div class="logo-sub">SMART ROUTE PLANNER</div>
+    </div>
+  </div>
+  <div class="hdr-right">
+    <div class="spill"><div class="sdot" id="dot"></div><span id="stxt">Готов</span></div>
+    <button class="hbtn strava-btn" id="stravaBtn">🟠 <span>Strava</span></button>
+    <button class="hbtn" id="shareBtn">🔗 <span>Поделиться</span></button>
+    <button class="hbtn" id="pdfBtn">📄 <span>PDF</span></button>
+    <button class="hbtn" id="ghBtn">🚀 <span>Deploy</span></button>
+  </div>
+</header>
+
+<div class="layout">
+  <div class="left">
+    <div class="mtabs">
+      <button class="mtab active" data-mode="ab">A → B</button>
+      <button class="mtab" data-mode="ring">🔄 Кольцо</button>
+    </div>
+    <div class="pscroll">
+      <!-- A→B -->
+      <div class="ps mab">
+        <div class="slbl">Маршрут</div>
+        <div class="rpt"><div class="ptm ptA">A</div><input class="ifl" id="si" placeholder="Откуда..." value="Санкт-Петербург, центр"><button class="gbt" id="gb1">🎯</button></div>
+        <div class="cl"></div>
+        <div id="wptsWrap"></div>
+        <div class="rpt"><div class="ptm ptB">B</div><input class="ifl" id="ei" placeholder="Куда..."></div>
+        <div class="rbtns">
+          <button class="bsm" id="addW">＋ Точка</button>
+          <button class="bsm" id="swp">⇅ Swap</button>
+        </div>
+      </div>
+      <!-- Ring -->
+      <div class="ps mring">
+        <div class="slbl">Старт</div>
+        <div class="rpt"><div class="ptm ptA">A</div><input class="ifl" id="ri" placeholder="Откуда..." value="Санкт-Петербург, центр"><button class="gbt" id="gb2">🎯</button></div>
+        <div class="slbl" style="margin-top:10px">Направление</div>
+        <div class="crose">
+          <div class="crbg"></div>
+          <button class="cdir active" data-dir="0" data-lbl="С">С</button>
+          <button class="cdir" data-dir="45" data-lbl="СВ">СВ</button>
+          <button class="cdir" data-dir="90" data-lbl="В">В</button>
+          <button class="cdir" data-dir="135" data-lbl="ЮВ">ЮВ</button>
+          <button class="cdir" data-dir="180" data-lbl="Ю">Ю</button>
+          <button class="cdir" data-dir="225" data-lbl="ЮЗ">ЮЗ</button>
+          <button class="cdir" data-dir="270" data-lbl="З">З</button>
+          <button class="cdir" data-dir="315" data-lbl="СЗ">СЗ</button>
+          <div class="crcen"><div class="cclbl" id="cLbl">С</div><div class="ccdeg" id="cDeg">0°</div></div>
+        </div>
+        <div class="slbl" style="margin-top:10px">Дистанция</div>
+        <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:4px">
+          <div><span class="dval" id="dv">50</span><span class="dkm"> км</span></div>
+          <span style="font-size:8px;color:var(--mut)">разная сложность</span>
+        </div>
+        <input type="range" id="ds" min="10" max="200" value="50" step="5">
+        <div class="rlbls"><span>10</span><span>200 км</span></div>
+      </div>
+      <!-- Shared -->
+      <div class="ps">
+        <div class="slbl">Тип маршрута</div>
+        <div class="tgrid">
+          <div class="tbtn active" data-type="road"><span class="tibig">🛣️</span>Шоссе</div>
+          <div class="tbtn active" data-type="gravel"><span class="tibig">🌲</span>Гравий</div>
+          <div class="tbtn active" data-type="mixed"><span class="tibig">🔀</span>Микс</div>
+          <div class="tbtn" data-type="mtb"><span class="tibig">⛰️</span>МТБ</div>
+        </div>
+      </div>
+      <!-- WEATHER -->
+      <div class="ps">
+        <div class="slbl">🌤 Погода на дату поездки</div>
+        <div class="wx-row">
+          <input type="date" class="ifl wx-date" id="wxDate">
+          <button class="gbt" id="wxBtn" title="Получить погоду">🔍</button>
+        </div>
+        <div class="wx-card" id="wxCard">
+          <div class="wx-main">
+            <div class="wx-icon" id="wxIcon">⛅</div>
+            <div>
+              <div class="wx-temp" id="wxTemp">—°C</div>
+              <div class="wx-desc" id="wxDesc">—</div>
+            </div>
+          </div>
+          <div class="wx-details">
+            <div class="wx-d"><div class="wx-dv" id="wxWind">—</div><div class="wx-dl">ветер м/с</div></div>
+            <div class="wx-d"><div class="wx-dv" id="wxHum">—</div><div class="wx-dl">влажность</div></div>
+            <div class="wx-d"><div class="wx-dv" id="wxFeel">—</div><div class="wx-dl">ощущается</div></div>
+          </div>
+          <div class="wx-warn" id="wxWarn">⚠️ Условия не идеальны для езды</div>
+        </div>
+        <div class="wx-key-row">
+          <input class="wx-key" id="wxKey" placeholder="OpenWeatherMap API ключ...">
+          <button class="wx-save" id="wxSave">Сохранить</button>
+        </div>
+      </div>
+      <!-- STRAVA DATA (when connected) -->
+      <div class="ps" id="stravaData" style="display:none">
+        <div class="slbl">⚡ Strava данные</div>
+        <div class="str-card on" id="strCard">
+          <div class="str-row">
+            <div><div class="str-name" id="strName">Атлет</div><div class="str-act" id="strActs">Загружаю...</div></div>
+            <div class="str-ftp" id="strFTP">FTP: —</div>
+          </div>
+          <div class="str-list" id="strList"></div>
+        </div>
+      </div>
+    </div>
+    <div class="pgrow">
+      <button class="genbtn" id="genBtn">ПОСТРОИТЬ МАРШРУТЫ</button>
+    </div>
+  </div>
+
+  <div class="mapw">
+    <canvas id="vcanvas"></canvas>
+    <canvas id="hcanvas"></canvas>
+    <div class="mleg" id="mleg"></div>
+    <div class="dbanner" id="dbn">⚠️ ДЕМО — реальные маршруты на GitHub Pages</div>
+    <div class="mov" id="mov"><div class="spin2"></div><div class="ovt" id="ovt">...</div></div>
+  </div>
+</div>
+
+<div class="rcards">
+  <div class="rph"><div class="rptitle">ВАРИАНТЫ МАРШРУТОВ</div><div class="rpm" id="rpm">Введи точки и нажми «Построить»</div></div>
+  <div class="rgrid c3" id="rg"></div>
+</div>
+
+<div class="hpanel" id="hpanel">
+  <div class="hhd">
+    <div class="htit">🕐 История маршрутов</div>
+    <div class="hha">
+      <button class="hclr" id="hclr">Очистить</button>
+      <button class="htog" id="htog">▲</button>
+    </div>
+  </div>
+  <div class="hbody" id="hbody"><div class="hlist" id="hl"></div></div>
+</div>
+
+</div><!-- .app -->
+
+<!-- STRAVA MODAL -->
+<div class="modal" id="stravaModal">
+  <div class="mbox">
+    <button class="mx" onclick="closeModal('stravaModal')">×</button>
+    <div class="mtitle" style="color:#FC5200">🟠 Strava интеграция</div>
+    <div class="msub">Подключи аккаунт для импорта FTP и истории поездок</div>
+    <div class="str-modal-fields">
+      <div>
+        <div class="smf-label">1. Создай Strava API приложение</div>
+        <div style="font-size:10px;color:var(--mut);line-height:1.5">Зайди на <a href="https://www.strava.com/settings/api" target="_blank" style="color:#FC5200">strava.com/settings/api</a> → создай приложение → скопируй Client ID и Client Secret</div>
+      </div>
+      <div>
+        <div class="smf-label">Client ID</div>
+        <input class="smf-input" id="strClientId" placeholder="123456">
+      </div>
+      <div>
+        <div class="smf-label">Client Secret</div>
+        <input class="smf-input" id="strClientSecret" placeholder="abc123...">
+      </div>
+      <div>
+        <div class="smf-label">Redirect URI (скопируй в настройки Strava)</div>
+        <div class="murl" id="strRedirectUri" style="cursor:pointer;margin-bottom:0;font-size:10px" onclick="copyText(this.textContent)">—</div>
+      </div>
+    </div>
+    <button class="str-connect-btn" id="strConnectBtn">Авторизоваться через Strava</button>
+    <div style="font-size:9px;color:var(--mut);margin-bottom:8px;text-align:center">— или вставь токен напрямую —</div>
+    <div class="str-token-row">
+      <input class="str-token-input" id="strToken" placeholder="Access token из Strava API...">
+      <button class="str-token-save" id="strTokenSave">Сохранить</button>
+    </div>
+    <div style="font-size:9px;color:var(--mut);margin-top:8px">Токен хранится локально в браузере и никуда не передаётся</div>
+  </div>
+</div>
+
+<!-- SHARE MODAL -->
+<div class="modal" id="shareModal">
+  <div class="mbox">
+    <button class="mx" onclick="closeModal('shareModal')">×</button>
+    <div class="mtitle">🔗 Поделиться маршрутом</div>
+    <div class="msub" id="shareSubtitle">Скопируй ссылку — получатель увидит тот же маршрут</div>
+    <div class="share-url" id="shareUrl">—</div>
+    <div class="share-btns">
+      <button class="sbtn" id="copyBtn" onclick="copyShareUrl()">📋 Скопировать</button>
+      <button class="sbtn" onclick="closeModal('shareModal')">✕ Закрыть</button>
+    </div>
+  </div>
+</div>
+
+<!-- GITHUB MODAL -->
+<div class="modal" id="ghModal">
+  <div class="mbox">
+    <button class="mx" onclick="closeModal('ghModal')">×</button>
+    <div class="mtitle">🚀 GitHub Pages</div>
+    <div class="msub">Бесплатный хостинг · Реальные маршруты и карты</div>
+    <div class="murl">https://[username].github.io/velogera</div>
+    <div class="msteps">
+      <div class="step"><div class="stn">1</div><div class="stb"><div class="stitle">Создай репозиторий</div><div class="sdet"><a href="https://github.com/new" target="_blank">github.com/new</a> → имя: <code>velogera</code> → Public → Create</div></div></div>
+      <div class="step"><div class="stn">2</div><div class="stb"><div class="stitle">Загрузи файл</div><div class="sdet">Скачай HTML → переименуй в <code>index.html</code> → Upload → Commit</div></div></div>
+      <div class="step"><div class="stn">3</div><div class="stb"><div class="stitle">Включи Pages</div><div class="sdet">Settings → Pages → Branch: <code>main</code> → Save (~1 мин)</div></div></div>
+    </div>
+    <button class="mclose" onclick="closeModal('ghModal')">Закрыть</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+'use strict';
+
+/* ═══════════ CONSTANTS ══════════════════════════════════ */
+const ORS='eyJvcmciOiI1YjNjZTM1OTc4NTExMTAwMDFjZjYyNDgiLCJpZCI6ImExY2NkNzRiMGIwNjRlOTZiOTkwYzc4NTFiODZjMWIzIiwiaCI6Im11cm11cjY0In0=';
+const CL={road:'#FF4500',gravel:'#22C55E',mixed:'#A855F7',mtb:'#F59E0B'};
+const PR={road:'cycling-road',gravel:'cycling-mountain',mixed:'cycling-regular',mtb:'cycling-mountain'};
+const MT={road:{l:'🛣️ ШОССЕ',b:'br'},gravel:{l:'🌲 ГРАВИЙ',b:'bg'},mixed:{l:'🔀 МИКС',b:'bm'},mtb:{l:'⛰️ МТБ',b:'bt'}};
+const SF={road:[{l:'Асфальт',p:93,c:'#FF4500'},{l:'Прочее',p:7,c:'#555'}],gravel:[{l:'Грунт',p:54,c:'#22C55E'},{l:'Лес.',p:29,c:'#16a34a'},{l:'Асф.',p:17,c:'#555'}],mixed:[{l:'Асфальт',p:62,c:'#A855F7'},{l:'Велодор.',p:23,c:'#7c3aed'},{l:'Грунт',p:15,c:'#555'}],mtb:[{l:'Тропы',p:58,c:'#F59E0B'},{l:'Гравий',p:27,c:'#d97706'},{l:'Асф.',p:15,c:'#555'}]};
+const DN={'0':'С','45':'СВ','90':'В','135':'ЮВ','180':'Ю','225':'ЮЗ','270':'З','315':'СЗ'};
+const TILE='https://a.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png';
+const TILE_SIZE=256;
+const HK='vg_v2';
+
+/* ═══════════ STATE ══════════════════════════════════════ */
+let mode='ab',selDir=0,routes={},mapRoutes=[],mapHidden={},selKey=null;
+let mapView=null,hoverLatLon=null;
+const tCache={};
+let favorites=new Set(JSON.parse(localStorage.getItem('vg_fav')||'[]'));
+let stravaToken=localStorage.getItem('vg_strava_token')||'';
+let wxApiKey=localStorage.getItem('vg_wx_key')||'';
+
+/* ═══════════ TILE MAP ═══════════════════════════════════ */
+const cvs=document.getElementById('vcanvas');
+const cx=cvs.getContext('2d');
+const hcvs=document.getElementById('hcanvas');
+const hx=hcvs.getContext('2d');
+
+function ll2tf(lat,lon,z){const n=Math.pow(2,z);return{x:(lon+180)/360*n,y:(1-Math.log(Math.tan(lat*Math.PI/180)+1/Math.cos(lat*Math.PI/180))/Math.PI)/2*n};}
+function fitZ(n,s,e,w,W,H){for(let z=16;z>=4;z--){const nw=ll2tf(n,w,z),se=ll2tf(s,e,z);if((se.x-nw.x)*TILE_SIZE<W*.88&&(se.y-nw.y)*TILE_SIZE<H*.88)return z;}return 10;}
+
+function getTile(z,x,y){
+  const k=`${z}/${x}/${y}`;
+  if(tCache[k])return Promise.resolve(tCache[k]);
+  return new Promise(res=>{
+    const img=new Image();img.crossOrigin='anonymous';
+    img.onload=()=>{tCache[k]=img;res(img);};
+    img.onerror=()=>res(null);
+    img.src=TILE.replace('{z}',z).replace('{x}',x).replace('{y}',y);
+  });
+}
+
+async function renderMap(){
+  const W=cvs.width,H=cvs.height;
+  cx.fillStyle='#0a0c14';cx.fillRect(0,0,W,H);
+  const vis=mapRoutes.filter(r=>!mapHidden[r.key]&&r.lc&&r.lc.length>1);
+  if(!vis.length){
+    cx.fillStyle='#252840';cx.font='13px Arial';cx.textAlign='center';
+    cx.fillText('Нажми «ПОСТРОИТЬ МАРШРУТЫ»',W/2,H/2-8);
+    cx.fillStyle='#6b7280';cx.font='11px Arial';cx.fillText('Маршруты появятся на реальной карте',W/2,H/2+12);
+    return;
+  }
+  let mn=90,mx=-90,mw=180,me=-180;
+  vis.forEach(r=>r.lc.forEach(([la,lo])=>{mn=Math.min(mn,la);mx=Math.max(mx,la);mw=Math.min(mw,lo);me=Math.max(me,lo);}));
+  const pd=Math.max((mx-mn)*.18,(me-mw)*.18,.003);
+  const N=mx+pd,S=mn-pd,E=me+pd,W2=mw-pd;
+  const z=fitZ(N,S,E,W2,W,H);
+  const cLat=(N+S)/2,cLon=(E+W2)/2;
+  const cT=ll2tf(cLat,cLon,z);
+  const oX=W/2-cT.x*TILE_SIZE,oY=H/2-cT.y*TILE_SIZE;
+  mapView={z,oX,oY};
+  const tx0=Math.floor(-oX/TILE_SIZE)-1,ty0=Math.floor(-oY/TILE_SIZE)-1;
+  const tx1=Math.ceil((W-oX)/TILE_SIZE)+1,ty1=Math.ceil((H-oY)/TILE_SIZE)+1;
+  const maxT=Math.pow(2,z)-1;
+  const proms=[];
+  for(let tx=tx0;tx<=tx1;tx++){
+    for(let ty=ty0;ty<=ty1;ty++){
+      if(ty<0||ty>maxT)continue;
+      const wtx=((tx%Math.pow(2,z))+Math.pow(2,z))%Math.pow(2,z);
+      proms.push(getTile(z,wtx,ty).then(img=>({img,px:Math.floor(oX+tx*TILE_SIZE),py:Math.floor(oY+ty*TILE_SIZE)})));
+    }
+  }
+  const tiles=await Promise.all(proms);
+  tiles.forEach(({img,px,py})=>{if(img)cx.drawImage(img,px,py,TILE_SIZE,TILE_SIZE);});
+  drawRoutes(vis);
+  drawHoverMarker();
+}
+
+function ll2px(lat,lon){
+  if(!mapView)return[0,0];
+  const{z,oX,oY}=mapView;const t=ll2tf(lat,lon,z);
+  return[oX+t.x*TILE_SIZE,oY+t.y*TILE_SIZE];
+}
+
+function drawRoutes(vis){
+  const unsel=vis.filter(r=>r.key!==selKey);
+  const sel=vis.filter(r=>r.key===selKey);
+  [...unsel,...sel].forEach(r=>{
+    const isSel=r.key===selKey;
+    if(isSel){
+      cx.beginPath();cx.strokeStyle=r.color+'30';cx.lineWidth=12;cx.setLineDash([]);
+      r.lc.forEach(([la,lo],i)=>{const[x,y]=ll2px(la,lo);i===0?cx.moveTo(x,y):cx.lineTo(x,y);});
+      cx.stroke();
+    }
+    cx.beginPath();cx.strokeStyle='rgba(0,0,0,.4)';cx.lineWidth=isSel?6:4;cx.setLineDash([]);
+    r.lc.forEach(([la,lo],i)=>{const[x,y]=ll2px(la,lo);i===0?cx.moveTo(x,y):cx.lineTo(x,y);});
+    cx.stroke();
+    cx.beginPath();cx.strokeStyle=selKey&&!isSel?r.color+'55':r.color;cx.lineWidth=isSel?3.5:2.5;cx.setLineDash(r.demo?[7,4]:[]);
+    r.lc.forEach(([la,lo],i)=>{const[x,y]=ll2px(la,lo);i===0?cx.moveTo(x,y):cx.lineTo(x,y);});
+    cx.stroke();cx.setLineDash([]);
+  });
+  const drawn=new Set();
+  vis.forEach(r=>{
+    if(!r.lc.length)return;
+    const[s0,s1]=r.lc[0],[e0,e1]=r.lc[r.lc.length-1];
+    const sk=s0.toFixed(3)+','+s1.toFixed(3);
+    if(!drawn.has(sk)){const[x,y]=ll2px(s0,s1);mkDot(x,y,'A','#22C55E','#000');drawn.add(sk);}
+    const ek=e0.toFixed(3)+','+e1.toFixed(3);
+    if(!drawn.has(ek)&&(Math.abs(s0-e0)>.001||Math.abs(s1-e1)>.001)){const[x,y]=ll2px(e0,e1);mkDot(x,y,'B','#FF4500','#fff');drawn.add(ek);}
+  });
+}
+
+function mkDot(x,y,lbl,bg,tc){
+  cx.beginPath();cx.arc(x,y,9,0,Math.PI*2);cx.fillStyle='rgba(0,0,0,.4)';cx.fill();
+  cx.beginPath();cx.arc(x,y,8,0,Math.PI*2);cx.fillStyle=bg;cx.fill();
+  cx.strokeStyle='#fff';cx.lineWidth=2;cx.stroke();
+  cx.fillStyle=tc;cx.font='bold 9px Arial';cx.textAlign='center';cx.textBaseline='middle';cx.fillText(lbl,x,y);
+  cx.textBaseline='alphabetic';
+}
+
+function drawHoverMarker(){
+  hx.clearRect(0,0,hcvs.width,hcvs.height);
+  if(!hoverLatLon||!mapView)return;
+  const[px,py]=ll2px(hoverLatLon[0],hoverLatLon[1]);
+  hx.beginPath();hx.arc(px,py,7,0,Math.PI*2);hx.fillStyle='rgba(255,255,255,.9)';hx.fill();
+  hx.strokeStyle='#FF4500';hx.lineWidth=2.5;hx.stroke();
+  hx.beginPath();hx.arc(px,py,3,0,Math.PI*2);hx.fillStyle='#FF4500';hx.fill();
+}
+
+function resizeCvs(){
+  const mw=document.querySelector('.mapw');
+  const W=mw.offsetWidth||700,H=mw.offsetHeight||480;
+  cvs.width=W;cvs.height=H;hcvs.width=W;hcvs.height=H;
+  renderMap();
+}
+
+/* ═══════════ ELEVATION CANVAS + HOVER SYNC ═════════════ */
+function drawElev(cid,ep,dp,col,lc){
+  const cv=document.getElementById(cid);if(!cv)return;
+  const cx2=cv.getContext('2d');
+  cv.width=cv.offsetWidth||200;cv.height=58;
+  const w=cv.width,h=cv.height,pl=4,pr=4,pt=4,pb=14,aw=w-pl-pr,ah=h-pt-pb;
+  const minE=Math.min(...ep),rng=Math.max(...ep)-minE||1;
+  cx2.clearRect(0,0,w,h);
+  // gradient fill
+  const grad=cx2.createLinearGradient(0,pt,0,h-pb);
+  grad.addColorStop(0,col+'44');grad.addColorStop(1,col+'05');
+  cx2.beginPath();cx2.moveTo(pl,h-pb);
+  ep.forEach((e,i)=>cx2.lineTo(pl+i/(ep.length-1)*aw,pt+(1-(e-minE)/rng)*ah));
+  cx2.lineTo(pl+aw,h-pb);cx2.closePath();cx2.fillStyle=grad;cx2.fill();
+  // line
+  cx2.beginPath();cx2.strokeStyle=col;cx2.lineWidth=1.5;
+  ep.forEach((e,i)=>{const x=pl+i/(ep.length-1)*aw,y=pt+(1-(e-minE)/rng)*ah;i===0?cx2.moveTo(x,y):cx2.lineTo(x,y);});
+  cx2.stroke();
+  // x labels
+  cx2.fillStyle='#6b7280';cx2.font='7px Arial';cx2.textAlign='center';
+  [0,.5,1].forEach(t=>{cx2.fillText((dp[Math.floor(t*(dp.length-1))]||0).toFixed(0)+'км',pl+t*aw,h-3);});
+  cx2.textAlign='right';cx2.fillText(Math.max(...ep)+'м',w-pr,pt+8);
+
+  // Hover interaction
+  const wrap=cv.closest('.ewrap');if(!wrap)return;
+  let hline=wrap.querySelector('.ehover');
+  let htip=wrap.querySelector('.etip');
+  if(!hline){hline=document.createElement('div');hline.className='ehover';wrap.appendChild(hline);}
+  if(!htip){htip=document.createElement('div');htip.className='etip';wrap.appendChild(htip);}
+
+  cv.onmousemove=function(e){
+    const rect=cv.getBoundingClientRect();
+    const relX=e.clientX-rect.left;
+    const idx=Math.max(0,Math.min(ep.length-1,Math.round((relX-pl)/aw*(ep.length-1))));
+    const xPct=idx/(ep.length-1||1);
+    hline.style.display='block';hline.style.left=(pl+xPct*aw)+'px';
+    const elev=ep[idx],dist=dp[idx]||0;
+    htip.style.display='block';htip.style.left=(pl+xPct*aw)+'px';
+    htip.textContent=elev+'м · '+dist.toFixed(1)+'км';
+    // Sync map marker
+    if(lc&&lc.length){
+      const ci=Math.min(Math.floor(idx/Math.max(ep.length-1,1)*(lc.length-1)),lc.length-1);
+      hoverLatLon=[lc[ci][0],lc[ci][1]];
+      drawHoverMarker();
+    }
+  };
+  cv.onmouseleave=function(){
+    hline.style.display='none';htip.style.display='none';
+    hoverLatLon=null;drawHoverMarker();
+  };
+  cv.onclick=function(e){
+    const rect=cv.getBoundingClientRect();
+    const relX=e.clientX-rect.left;
+    const idx=Math.max(0,Math.min(ep.length-1,Math.round((relX-pl)/aw*(ep.length-1))));
+    if(lc&&lc.length){
+      const ci=Math.min(Math.floor(idx/Math.max(ep.length-1,1)*(lc.length-1)),lc.length-1);
+      hoverLatLon=[lc[ci][0],lc[ci][1]];
+      renderMap();
+      toast('📍 '+ep[idx]+'м · '+((dp[idx]||0).toFixed(1))+'км от старта');
+    }
+  };
+}
+
+/* ═══════════ ORS API ════════════════════════════════════ */
+async function geocode(a){
+  const m=a.trim().match(/^(-?\d+\.?\d*)[,\s]+(-?\d+\.?\d*)$/);
+  if(m)return[parseFloat(m[2]),parseFloat(m[1])];
+  const r=await fetch(`https://api.openrouteservice.org/geocode/search?api_key=${ORS}&text=${encodeURIComponent(a)}&size=1`);
+  if(!r.ok)throw new Error('Геокодер: '+r.status);
+  const d=await r.json();
+  if(!d.features?.length)throw new Error('Не найдено: «'+a+'»');
+  return d.features[0].geometry.coordinates;
+}
+
+async function fetchRoute(coords,prof,alt){
+  const body={coordinates:coords,elevation:true,instructions:true,language:'ru'};
+  if(alt)body.alternative_routes={target_count:2,weight_factor:1.6,share_factor:0.6};
+  const r=await fetch(
+    `https://api.openrouteservice.org/v2/directions/${prof}/geojson?api_key=${ORS}`,
+    {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}
+  );
+  if(!r.ok){const t=await r.text().catch(()=>'');throw new Error('ORS '+r.status);}
+  return r.json();
+}
+
+function xStats(feat){
+  const c=feat.geometry.coordinates,s=feat.properties.summary;
+  const eg=Math.round(s.ascent??0),dk=(s.distance/1000).toFixed(1);
+  const h=Math.floor(s.duration/3600),m=Math.floor((s.duration%3600)/60);
+  const steps=(feat.properties.segments||[]).flatMap(sg=>sg.steps||[]);
+  const step=Math.max(1,Math.floor(c.length/24));
+  const ep=[],dp=[];let acc=0;
+  for(let i=0;i<c.length;i+=step){
+    ep.push(Math.round(c[i][2]??0));
+    if(i>0){const p=c[i-step];acc+=Math.sqrt((c[i][0]-p[0])**2+(c[i][1]-p[1])**2)*111.32;}
+    dp.push(parseFloat(acc.toFixed(1)));
+  }
+  return{dk,eg,tm:`${h}:${m.toString().padStart(2,'0')}`,ep,dp,lc:c.map(x=>[x[1],x[0]]),steps};
+}
+const isNet=e=>e instanceof TypeError||e.message==='Failed to fetch';
+
+/* ═══════════ WEATHER ════════════════════════════════════ */
+async function fetchWeather(){
+  const key=document.getElementById('wxKey').value.trim()||wxApiKey;
+  if(!key){toast('Введи OpenWeatherMap API ключ','bad');return;}
+  const dateStr=document.getElementById('wxDate').value;
+  if(!dateStr){toast('Выбери дату поездки','bad');return;}
+  // Get coordinates from start address
+  const sa=mode==='ab'?document.getElementById('si').value.trim():document.getElementById('ri').value.trim();
+  if(!sa){toast('Сначала введи точку старта','bad');return;}
+  ss('spin','Погода...');
+  try{
+    const coord=await geocode(sa);
+    const lat=coord[1],lon=coord[0];
+    const today=new Date(),date=new Date(dateStr);
+    const diffDays=Math.round((date-today)/(86400000));
+    let data;
+    if(diffDays<=5&&diffDays>=0){
+      const r=await fetch(`https://api.openrouteservice.org/geocode/reverse?api_key=${ORS}&point.lon=${lon}&point.lat=${lat}&size=1`).then(()=>null).catch(()=>null);
+      const wr=await fetch(`https://api.openweathermap.org/data/2.5/forecast?lat=${lat}&lon=${lon}&appid=${key}&units=metric&lang=ru&cnt=40`);
+      if(!wr.ok)throw new Error('WeatherAPI: '+wr.status);
+      const wd=await wr.json();
+      const target=dateStr+'T12:00:00';
+      const item=wd.list.find(x=>x.dt_txt>=dateStr)||wd.list[0];
+      data={temp:Math.round(item.main.temp),feel:Math.round(item.main.feels_like),hum:item.main.humidity,wind:Math.round(item.wind.speed),desc:item.weather[0].description,icon:item.weather[0].id};
+    } else {
+      throw new Error('Прогноз доступен только на 5 дней вперёд');
+    }
+    renderWeather(data);
+    localStorage.setItem('vg_wx_key',key);wxApiKey=key;
+    ss('live','Готов');
+  }catch(e){
+    ss('','Готов');toast(e.message,'bad');
+  }
+}
+
+function renderWeather(d){
+  const icons={2:'⛈️',3:'🌧️',5:'🌧️',6:'❄️',7:'🌫️',800:'☀️',8:'☁️'};
+  const icon=icons[Math.floor(d.icon/100)]||(d.icon===800?'☀️':'⛅');
+  document.getElementById('wxIcon').textContent=icon;
+  document.getElementById('wxTemp').textContent=d.temp+'°C';
+  document.getElementById('wxDesc').textContent=d.desc;
+  document.getElementById('wxWind').textContent=d.wind;
+  document.getElementById('wxHum').textContent=d.hum+'%';
+  document.getElementById('wxFeel').textContent=d.feel+'°C';
+  const warn=d.wind>8||d.icon>=200&&d.icon<700;
+  document.getElementById('wxWarn').classList.toggle('on',warn);
+  document.getElementById('wxWarn').textContent=d.wind>8?'⚠️ Сильный ветер ('+d.wind+' м/с)':'⚠️ Осадки ожидаются — возьми влагозащиту';
+  document.getElementById('wxCard').classList.add('on');
+}
+
+/* ═══════════ STRAVA ══════════════════════════════════════ */
+function initStrava(){
+  const uri=window.location.href.split('?')[0].split('#')[0];
+  document.getElementById('strRedirectUri').textContent=uri;
+  // Check for OAuth callback
+  const params=new URLSearchParams(window.location.search);
+  const code=params.get('code');
+  if(code&&params.get('state')==='velogera'){
+    const cid=localStorage.getItem('vg_str_cid');
+    const cs=localStorage.getItem('vg_str_cs');
+    if(cid&&cs)exchangeStravaToken(cid,cs,code);
+  }
+  // Load saved token
+  if(stravaToken)loadStravaData();
+}
+
+async function exchangeStravaToken(cid,cs,code){
+  try{
+    const r=await fetch('https://www.strava.com/oauth/token',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({client_id:cid,client_secret:cs,code,grant_type:'authorization_code'})
+    });
+    const d=await r.json();
+    if(d.access_token){
+      stravaToken=d.access_token;
+      localStorage.setItem('vg_strava_token',stravaToken);
+      window.history.replaceState({},'',window.location.pathname);
+      loadStravaData();
+    }
+  }catch(e){toast('Ошибка авторизации Strava','bad');}
+}
+
+async function loadStravaData(){
+  if(!stravaToken)return;
+  try{
+    const r=await fetch('https://www.strava.com/api/v3/athlete',{headers:{Authorization:'Bearer '+stravaToken}});
+    if(r.status===401){localStorage.removeItem('vg_strava_token');stravaToken='';return;}
+    const athlete=await r.json();
+    const actR=await fetch('https://www.strava.com/api/v3/athlete/activities?per_page=5',{headers:{Authorization:'Bearer '+stravaToken}});
+    const acts=await actR.json();
+    renderStravaData(athlete,acts);
+  }catch(e){}
+}
+
+function renderStravaData(athlete,acts){
+  document.getElementById('stravaData').style.display='block';
+  document.getElementById('strName').textContent=(athlete.firstname||'')+' '+(athlete.lastname||'');
+  const ftp=athlete.ftp||null;
+  document.getElementById('strFTP').textContent=ftp?'FTP: '+ftp+'W':'FTP: не задан';
+  document.getElementById('strActs').textContent=(athlete.bikes?.length||0)+' велосипедов · '+((acts||[]).length)+' последних заездов';
+  const list=document.getElementById('strList');list.innerHTML='';
+  (acts||[]).slice(0,5).forEach(a=>{
+    const km=(a.distance/1000).toFixed(1),h=Math.floor(a.moving_time/3600),m=Math.floor((a.moving_time%3600)/60);
+    const item=document.createElement('div');item.className='str-item';
+    item.innerHTML='<span>'+a.name+'</span><span>'+km+' км · '+h+':'+String(m).padStart(2,'0')+'</span>';
+    list.appendChild(item);
+  });
+  document.getElementById('stravaBtn').classList.add('connected');
+  document.getElementById('stravaBtn').innerHTML='✅ <span>Strava</span>';
+}
+
+function connectStrava(){
+  const cid=document.getElementById('strClientId').value.trim();
+  const cs=document.getElementById('strClientSecret').value.trim();
+  if(!cid||!cs){toast('Введи Client ID и Client Secret','bad');return;}
+  localStorage.setItem('vg_str_cid',cid);
+  localStorage.setItem('vg_str_cs',cs);
+  const uri=encodeURIComponent(window.location.href.split('?')[0].split('#')[0]);
+  const url=`https://www.strava.com/oauth/authorize?client_id=${cid}&redirect_uri=${uri}&response_type=code&scope=read,activity:read&state=velogera`;
+  window.location.href=url;
+}
+
+function saveStravaToken(){
+  const t=document.getElementById('strToken').value.trim();
+  if(!t){toast('Введи токен','bad');return;}
+  stravaToken=t;
+  localStorage.setItem('vg_strava_token',stravaToken);
+  closeModal('stravaModal');
+  loadStravaData();
+  toast('✓ Strava токен сохранён','ok');
+}
+
+/* ═══════════ GENERATE ═══════════════════════════════════ */
+async function generate(){
+  const types=[...document.querySelectorAll('.tbtn.active')].map(b=>b.dataset.type).slice(0,3);
+  if(!types.length){toast('Выбери тип маршрута','bad');return;}
+  if(mode==='ab')await genAB(types);
+  else await genRing(types);
+}
+
+async function genAB(types){
+  const sa=document.getElementById('si').value.trim();
+  const ea=document.getElementById('ei').value.trim();
+  const wpts=[...document.querySelectorAll('.wpt-i')].map(i=>i.value.trim()).filter(Boolean);
+  if(!sa){toast('Введи точку A','bad');return;}
+  if(!ea){toast('Введи точку B','bad');return;}
+  ss('spin','Геокодирование...');disBtn(true);ov(true,'Геокодирование...');
+  skels(types.length*(wpts.length===0?2:1));
+  try{
+    const allA=[sa,...wpts,ea];
+    const allC=await Promise.all(allA.map(geocode));
+    ov(true,'Строю варианты...');
+    const useAlt=wpts.length===0;
+    const res=await Promise.allSettled(types.map(t=>fetchRoute(allC,PR[t],useAlt).then(d=>({t,gj:d}))));
+    routes={};mapRoutes=[];mapHidden={};selKey=null;
+    res.forEach(r=>{
+      if(r.status!=='fulfilled')return;
+      const{t,gj}=r.value;
+      gj.features.forEach((feat,vi)=>{
+        const k=t+'_'+vi;const s=xStats(feat);
+        routes[k]={t,k,vi,fromN:sa,toN:ea,s};
+        if(vi===0)mapRoutes.push({key:k,color:CL[t],lc:s.lc});
+      });
+    });
+    renderMap();
+    drawABCards(types,sa,ea,false);
+    buildLegAB(types);
+    saveH({mode:'ab',from:sa,to:ea,types,dist:firstDist()});
+    saveURLState({mode:'ab',from:sa,to:ea,types});
+    const n=Object.keys(routes).length;
+    ss('live',n+' маршрутов');toast('✓ '+n+' маршрутов','ok');
+  }catch(e){
+    if(isNet(e)){ov(false);disBtn(false);demoAB(types,sa,ea);return;}
+    ss('err','Ошибка');toast(e.message,'bad');
+  }finally{ov(false);disBtn(false);}
+}
+
+async function genRing(types){
+  const sa=document.getElementById('ri').value.trim();
+  const km=parseInt(document.getElementById('ds').value)||50;
+  if(!sa){toast('Введи точку старта','bad');return;}
+  ss('spin','Строю...');disBtn(true);ov(true,'Геокодирование...');skels(3);
+  try{
+    const sc=await geocode(sa);
+    const azs=[selDir,(selDir+22)%360,(selDir+338)%360];
+    ov(true,'Строю 3 кольца ('+DN[String(selDir)]+' ±22°)...');
+    const res=await Promise.allSettled(azs.map((az,i)=>{
+      const t=types[i%types.length],pp=calcPull(sc[1],sc[0],az,km);
+      return fetchRoute([sc,pp,sc],PR[t],false).then(d=>({t,az,gj:d}));
+    }));
+    routes={};mapRoutes=[];mapHidden={};selKey=null;
+    res.forEach((r,i)=>{
+      const k='r'+i;
+      if(r.status==='fulfilled'){
+        const{t,az,gj}=r.value;const s=xStats(gj.features[0]);
+        routes[k]={t,k,dl:getDL(az),fromN:sa,s};
+        mapRoutes.push({key:k,color:CL[t],lc:s.lc});
+      }else{routes[k]={k,t:types[i%types.length],err:r.reason?.message||'Ошибка'};}
+    });
+    renderMap();drawRingCards(['r0','r1','r2'],sa);buildLegRing(['r0','r1','r2']);
+    saveH({mode:'ring',from:sa,dir:selDir,distKm:km,types,dist:firstDist()});
+    saveURLState({mode:'ring',from:sa,dir:selDir,distKm:km,types});
+    ss('live','3 кольца');toast('✓ 3 кольцевых маршрута','ok');
+  }catch(e){
+    if(isNet(e)){ov(false);disBtn(false);demoRing(sa,km);return;}
+    ss('err','Ошибка');toast(e.message,'bad');
+  }finally{ov(false);disBtn(false);}
+}
+
+function calcPull(lat,lon,az,km){
+  const R=6371,d=km*.38,a=az*Math.PI/180,p1=lat*Math.PI/180,l1=lon*Math.PI/180;
+  const p2=Math.asin(Math.sin(p1)*Math.cos(d/R)+Math.cos(p1)*Math.sin(d/R)*Math.cos(a));
+  const l2=l1+Math.atan2(Math.sin(a)*Math.sin(d/R)*Math.cos(p1),Math.cos(d/R)-Math.sin(p1)*Math.sin(p2));
+  return[l2*180/Math.PI,p2*180/Math.PI];
+}
+function getDL(az){return[{m:22.5,l:'С'},{m:67.5,l:'СВ'},{m:112.5,l:'В'},{m:157.5,l:'ЮВ'},{m:202.5,l:'Ю'},{m:247.5,l:'ЮЗ'},{m:292.5,l:'З'},{m:337.5,l:'СЗ'},{m:360,l:'С'}].find(x=>az<x.m)?.l||'С';}
+function firstDist(){return Object.values(routes).find(r=>r.s)?.s?.dk||'?';}
+
+/* ═══════════ URL SHARE STATE ════════════════════════════ */
+function saveURLState(params){
+  try{
+    const enc=btoa(encodeURIComponent(JSON.stringify(params)));
+    window.history.replaceState({},'',window.location.pathname+'#r='+enc);
+  }catch(e){}
+}
+
+function loadURLState(){
+  try{
+    const hash=window.location.hash;
+    if(!hash.includes('#r='))return;
+    const enc=hash.replace('#r=','');
+    const params=JSON.parse(decodeURIComponent(atob(enc)));
+    if(params.mode){
+      document.querySelectorAll('.mtab').forEach(t=>t.classList.remove('active'));
+      document.querySelector('.mtab[data-mode="'+params.mode+'"]')?.classList.add('active');
+      document.getElementById('app').className='app mode-'+params.mode;
+      mode=params.mode;
+    }
+    if(params.from){
+      if(mode==='ab'){document.getElementById('si').value=params.from;if(params.to)document.getElementById('ei').value=params.to;}
+      else{document.getElementById('ri').value=params.from;}
+    }
+    if(params.types){
+      document.querySelectorAll('.tbtn').forEach(b=>b.classList.toggle('active',params.types.includes(b.dataset.type)));
+    }
+    if(params.dir!=null){
+      selDir=params.dir;
+      document.querySelectorAll('.cdir').forEach(b=>b.classList.toggle('active',parseInt(b.dataset.dir)===params.dir));
+      document.getElementById('cLbl').textContent=DN[String(params.dir)]||'С';
+      document.getElementById('cDeg').textContent=params.dir+'°';
+    }
+    if(params.distKm){document.getElementById('ds').value=params.distKm;document.getElementById('dv').textContent=params.distKm;}
+    toast('🔗 Маршрут загружен из ссылки — нажми «Построить»','ok');
+  }catch(e){}
+}
+
+function openShareModal(){
+  const url=window.location.href;
+  if(!window.location.hash.includes('#r=')){
+    toast('Сначала построй маршрут','bad');return;
+  }
+  document.getElementById('shareUrl').textContent=url;
+  document.getElementById('shareModal').classList.add('on');
+}
+
+function copyShareUrl(){
+  const url=document.getElementById('shareUrl').textContent;
+  copyText(url);
+  const btn=document.getElementById('copyBtn');
+  btn.textContent='✅ Скопировано';btn.classList.add('copied');
+  setTimeout(()=>{btn.textContent='📋 Скопировать';btn.classList.remove('copied');},2000);
+}
+
+function copyText(text){
+  navigator.clipboard?.writeText(text).catch(()=>{
+    const ta=document.createElement('textarea');ta.value=text;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);
+  });
+  toast('Скопировано','ok');
+}
+
+/* ═══════════ FAVORITES ══════════════════════════════════ */
+function toggleFav(k){
+  const isFav=favorites.has(k);
+  if(isFav){favorites.delete(k);}else{favorites.add(k);}
+  localStorage.setItem('vg_fav',JSON.stringify([...favorites]));
+  const btn=document.querySelector('.fav-btn[data-k="'+k+'"]');
+  if(btn)btn.textContent=favorites.has(k)?'❤️':'🤍';
+  toast(favorites.has(k)?'❤️ Добавлено в избранное':'🤍 Убрано из избранного','ok');
+}
+
+/* ═══════════ PDF EXPORT ═════════════════════════════════ */
+function exportPDF(){
+  // Open all descriptions before print
+  document.querySelectorAll('.cdesc-wrap').forEach(w=>w.classList.add('open'));
+  document.querySelectorAll('.arr').forEach(a=>a.classList.add('open'));
+  toast('Открываю диалог печати...','ok');
+  setTimeout(()=>{
+    window.print();
+    setTimeout(()=>{
+      document.querySelectorAll('.cdesc-wrap').forEach(w=>w.classList.remove('open'));
+      document.querySelectorAll('.arr').forEach(a=>a.classList.remove('open'));
+    },3000);
+  },400);
+}
+
+/* ═══════════ DEMO DATA ══════════════════════════════════ */
+const DA={
+  road:[
+    {dk:'31.8',eg:85,tm:'1:13',ep:[12,11,10,11,13,15,18,16,14,12,15,18,20,18,15,13,11,10,12],dp:[0,1.7,3.4,5,6.7,8.4,10,11.7,13.4,15,16.7,18.4,20,21.7,23.4,25,26.7,28.4,31.8],lc:[[59.942,30.315],[59.930,30.280],[59.916,30.242],[59.902,30.202],[59.888,30.160],[59.874,30.118],[59.860,30.076],[59.846,30.034],[59.832,29.994],[59.882,29.904]],desc:'<div class="dsec"><b>Петергофское шоссе</b> — прямой асфальтовый маршрут. Ровный рельеф, набор ▲85 м. Трафик в час пик.</div><div class="dsec"><b>Дороги:</b> пр. Стачек → Петергофское шоссе → Ораниенбаумское шоссе.</div>'},
+    {dk:'34.5',eg:145,tm:'1:30',ep:[12,14,18,25,38,48,44,36,28,20,16,14,18,22,18,14,12],dp:[0,2,4,6,8.5,11,13.5,16,18.5,21,23.5,26,28.5,31,32.5,33.5,34.5],lc:[[59.942,30.315],[59.935,30.285],[59.925,30.255],[59.914,30.225],[59.902,30.195],[59.890,30.165],[59.878,30.135],[59.866,30.105],[59.854,30.075],[59.882,29.904]],desc:'<div class="dsec"><b>Альтернатива через Горелово.</b> Набор ▲145 м, меньше трафика в утренние часы.</div><div class="dsec"><b>Дороги:</b> ул. Маршала Жукова → Таллинское шоссе.</div>'}
+  ],
+  gravel:[
+    {dk:'38.4',eg:210,tm:'2:01',ep:[12,22,38,58,82,105,115,118,108,88,65,45,28,18,14,12],dp:[0,2.5,5,7.5,10,12.5,15,17.5,20,22.5,25,27.5,30,32.5,35,38.4],lc:[[59.942,30.315],[59.958,30.298],[59.972,30.275],[59.982,30.248],[59.985,30.155],[59.975,30.126],[59.960,30.100],[59.944,30.076],[59.928,30.054],[59.910,30.032],[59.882,29.904]],desc:'<div class="dsec"><b>Петергофский лесопарк.</b> Грунтовые дороги через лес, набор ▲210 м. Нужна резина 35мм+.</div>'},
+    {dk:'42.1',eg:320,tm:'2:29',ep:[12,18,28,42,62,88,115,145,165,155,135,110,82,55,35,22,15,12],dp:[0,2.3,4.6,7,9.4,11.8,14.2,16.6,19,21.5,24,26.5,29,31.5,34,36.5,39,42.1],lc:[[59.942,30.315],[59.960,30.295],[59.975,30.270],[59.986,30.240],[59.992,30.205],[59.994,30.168],[59.990,30.132],[59.980,30.098],[59.966,30.068],[59.950,30.042],[59.930,30.022],[59.910,30.012],[59.882,29.904]],desc:'<div class="dsec"><b>Ропшинские высоты.</b> Набор ▲320 м, технические спуски. Только для подготовленных.</div>'}
+  ],
+  mixed:[
+    {dk:'34.2',eg:145,tm:'1:33',ep:[12,16,22,30,42,52,54,46,35,26,19,15,13,12],dp:[0,2.6,5.2,7.8,10.4,13,15.6,18.2,20.8,23.4,26,28.6,31.2,34.2],lc:[[59.942,30.315],[59.936,30.292],[59.928,30.266],[59.919,30.240],[59.910,30.214],[59.900,30.188],[59.891,30.162],[59.882,30.136],[59.862,30.086],[59.842,30.044],[59.882,29.904]],desc:'<div class="dsec"><b>Велодорожки Петергофской дороги.</b> Асфальт + велодорожки + грунт, набор ▲145 м.</div>'}
+  ]
+};
+const DR=[
+  {dk:'47.2',eg:180,tm:'1:58',dl:'С',t:'road',ep:[12,22,38,55,78,85,78,55,38,22,12,16,22,12],dp:[0,3.5,7,10.5,14,17.5,21,24.5,28,31.5,35,38.5,42,47.2],lc:[[59.942,30.315],[59.965,30.300],[59.985,30.260],[60.000,30.210],[60.006,30.100],[59.994,30.055],[59.974,30.025],[59.942,30.315]],desc:'<div class="dsec"><b>Север — Сестрорецк.</b> Набор ▲180 м, вдоль Финского залива. Асфальт.</div>'},
+  {dk:'50.8',eg:350,tm:'2:32',dl:'СВ',t:'gravel',ep:[12,30,65,110,155,168,155,110,65,30,15,12],dp:[0,4.6,9.2,13.8,18.4,23,27.6,32.2,36.8,41.4,46,50.8],lc:[[59.942,30.315],[59.956,30.345],[59.968,30.378],[59.978,30.484],[59.938,30.558],[59.942,30.315]],desc:'<div class="dsec"><b>СВ — Всеволожск.</b> Набор ▲350 м, лесные тропы Карельского перешейка.</div>'},
+  {dk:'43.5',eg:240,tm:'1:58',dl:'СЗ',t:'mixed',ep:[12,20,38,62,82,86,78,56,34,20,14,12],dp:[0,3.9,7.8,11.7,15.6,19.5,23.4,27.3,31.2,35.1,39,43.5],lc:[[59.942,30.315],[59.930,30.338],[59.916,30.358],[59.852,30.390],[59.816,30.315],[59.942,30.315]],desc:'<div class="dsec"><b>СЗ — Лахта, Стрельна.</b> Набор ▲240 м, велодорожки + грунт.</div>'}
+];
+
+function genPOI(lc,dk){
+  if(parseFloat(dk)<50)return[];
+  const pts=[{r:.3,t:{icon:'☕',name:'Coffee Bike Stop',type:'кофейня'}},{r:.5,t:{icon:'🍴',name:'Кафе «Привал»',type:'кафе'}},{r:.7,t:{icon:'🛒',name:'Мини-маркет',type:'магазин'}}];
+  return pts.map(p=>{const i=Math.min(Math.floor(p.r*lc.length),lc.length-1);return{lat:lc[i][0],lon:lc[i][1],icon:p.t.icon,name:p.t.name,type:p.t.type,km:(p.r*parseFloat(dk)).toFixed(0)};});
+}
+
+function demoAB(types,sa,ea){
+  document.getElementById('dbn').classList.add('on');ss('','ДЕМО');
+  routes={};mapRoutes=[];mapHidden={};selKey=null;
+  types.forEach(t=>{(DA[t]||[]).forEach((d,vi)=>{
+    const k=t+'_'+vi;
+    routes[k]={t,k,vi,fromN:sa||'СПб',toN:ea||'Петергоф',s:{dk:d.dk,eg:d.eg,tm:d.tm,ep:d.ep,dp:d.dp,lc:d.lc,steps:null},demoDesc:d.desc};
+    if(vi===0)mapRoutes.push({key:k,color:CL[t],lc:d.lc,demo:true});
+  });});
+  renderMap();drawABCards(types,sa||'СПб',ea||'Петергоф',true);buildLegAB(types);
+}
+function demoRing(sa){
+  document.getElementById('dbn').classList.add('on');ss('','ДЕМО');
+  routes={};mapRoutes=[];mapHidden={};selKey=null;
+  DR.forEach((d,i)=>{const k='r'+i;
+    routes[k]={t:d.t,k,dl:d.dl,fromN:sa||'СПб',s:{dk:d.dk,eg:d.eg,tm:d.tm,ep:d.ep,dp:d.dp,lc:d.lc,steps:null},demoDesc:d.desc};
+    mapRoutes.push({key:k,color:CL[d.t],lc:d.lc,demo:true});
+  });
+  renderMap();drawRingCards(['r0','r1','r2'],sa||'СПб');buildLegRing(['r0','r1','r2']);
+}
+
+/* ═══════════ CARDS ══════════════════════════════════════ */
+function diffBadge(eg){
+  if(eg<150)return'<span class="diff-easy">Лёгкий</span>';
+  if(eg<350)return'<span class="diff-med">Средний</span>';
+  if(eg<600)return'<span class="diff-hard">Тяжёлый</span>';
+  return'<span class="diff-ext">Экстремальный</span>';
+}
+
+function buildDesc(steps,t,dk,eg,fromN,toN){
+  const named=[];const seen=new Set();
+  (steps||[]).forEach(s=>{if(s.name&&s.name!=='-'&&s.distance>300&&!seen.has(s.name)){seen.add(s.name);named.push({name:s.name,dist:s.distance});}});
+  named.sort((a,b)=>b.dist-a.dist);
+  const roads=named.slice(0,4).map(x=>x.name);
+  const dif=eg<150?'лёгкий':eg<350?'умеренный':eg<600?'тяжёлый':'экстремальный';
+  const tr=eg<150?'ровный рельеф':eg<350?'умеренный набор ▲'+eg+' м':'значительный набор ▲'+eg+' м';
+  const sf={road:'асфальт',gravel:'грунт/гравий',mixed:'асфальт+велодорожки',mtb:'тропы'}[t]||'смешанный';
+  let h='<div class="dsec">';
+  if(fromN&&toN)h+='<b>'+fromN+' → '+toN+'.</b> ';
+  h+=tr+'. Покрытие: <b>'+sf+'</b>.</div>';
+  if(roads.length)h+='<div class="dsec"><b>Дороги:</b> '+roads.join(', ')+'.</div>';
+  h+='<div class="dsec">Уровень: <b>'+dif+'</b>.</div>';
+  return h;
+}
+
+function drawABCards(types,fn,tn2,demo){
+  const g=document.getElementById('rg');g.innerHTML='';
+  const keys=types.flatMap(t=>[t+'_0',t+'_1'].filter(k=>routes[k]));
+  g.className='rgrid c'+Math.min(Math.max(keys.length,1),4);
+  document.getElementById('rpm').textContent=keys.length+' вар. · '+fn+' → '+tn2+(demo?' · ДЕМО':'');
+  keys.forEach((k,i)=>mkCard(g,k,routes[k],i));
+  setGL(g);
+  setTimeout(()=>keys.forEach(k=>{const r=routes[k];if(r?.s)drawElev('ec_'+k,r.s.ep,r.s.dp,CL[r.t||'road'],r.s.lc);}),150);
+}
+function drawRingCards(keys,sa){
+  const g=document.getElementById('rg');g.innerHTML='';
+  const valid=keys.filter(k=>routes[k]);
+  g.className='rgrid c'+Math.min(valid.length||1,3);
+  document.getElementById('rpm').textContent=valid.length+' кольца · '+sa+' · '+DN[String(selDir)]+' ±22°';
+  valid.forEach((k,i)=>mkCard(g,k,routes[k],i));
+  setGL(g);
+  setTimeout(()=>valid.forEach(k=>{const r=routes[k];if(r?.s)drawElev('ec_'+k,r.s.ep,r.s.dp,CL[r.t||'road'],r.s.lc);}),150);
+}
+
+function mkCard(g,key,route,idx){
+  if(!route||route.err){
+    const d=document.createElement('div');d.className='err-card';d.innerHTML='⚠️ Недоступен'+(route?.err?'<br><small style="color:#ef4444">'+route.err+'</small>':'');g.appendChild(d);return;
+  }
+  const{s,t}=route,m2=MT[t]||MT.road,sf=SF[t]||SF.road;
+  const isRing=route.dl!=null,isAlt=route.vi>0;
+  const nm=isRing?route.dl+' · '+tn(t):isAlt?tn(t)+' · вар. '+(route.vi+1):tn(t);
+  const sub=isRing?'Кольцо · '+(route.fromN||''):(route.fromN||'')+' → '+(route.toN||'');
+  const desc=route.demoDesc||buildDesc(s.steps,t,s.dk,s.eg,route.fromN,route.toN);
+  const pois=genPOI(s.lc,s.dk);
+  const isFav=favorites.has(key);
+  const sb=sf.map(x=>'<div class="ss" style="width:'+x.p+'%;background:'+x.c+'"></div>').join('');
+  const sl=sf.map(x=>'<span class="sl2"><span class="sd" style="background:'+x.c+'"></span>'+x.l+' '+x.p+'%</span>').join('');
+  let poiHtml='';
+  if(pois.length){
+    poiHtml='<div class="dsec" style="margin-top:7px"><b>🍴 На маршруте ('+s.dk+' км):</b></div><div class="poi-list">';
+    pois.forEach((p,pi)=>{poiHtml+='<div class="poi-item"><div class="poi-info"><div class="poi-name">'+p.icon+' '+p.name+'</div><div class="poi-meta">~'+p.km+' км · '+p.type+'</div></div><button class="poi-add" data-poi="'+pi+'" data-key="'+key+'">+ В маршрут</button></div>';});
+    poiHtml+='</div>';
+  }
+  const card=document.createElement('div');
+  card.className='rcard';card.style.animationDelay=idx*.06+'s';card.dataset.key=key;
+  card.innerHTML=
+    '<div class="ctop"><span class="badge '+m2.b+'">'+m2.l+'</span>'+diffBadge(s.eg)+
+    '<button class="fav-btn" data-k="'+key+'" title="В избранное">'+(isFav?'❤️':'🤍')+'</button></div>'+
+    '<div class="cname">'+nm+'</div>'+
+    '<div class="csub">'+sub+'</div>'+
+    '<div class="cstats">'+
+      '<div class="cs"><div class="csv" style="color:'+CL[t]+'">'+s.dk+'</div><div class="csl">КМ</div></div>'+
+      '<div class="cs"><div class="csv">'+s.tm+'</div><div class="csl">ЧЧ:ММ</div></div>'+
+      '<div class="cs"><div class="csv" style="color:var(--amb)">▲'+s.eg+'</div><div class="csl">М НАБОР</div></div>'+
+    '</div>'+
+    '<div class="ewrap"><canvas id="ec_'+key+'"></canvas></div>'+
+    '<div class="cdesc-toggle" data-card="'+key+'"><span>📋 Описание маршрута</span><span class="arr">▼</span></div>'+
+    '<div class="cdesc-wrap" id="cdw_'+key+'"><div class="cdesc-body">'+desc+poiHtml+'</div></div>'+
+    '<div class="sbar">'+sb+'</div>'+
+    '<div class="slbs">'+sl+'</div>'+
+    '<div class="cfoot">'+
+      '<button class="bf pri" data-a="gpx" data-k="'+key+'">⬇ GPX</button>'+
+      '<button class="bf sec" data-a="foc" data-k="'+key+'">🗺 Карта</button>'+
+      '<button class="bf sec" data-a="share" data-k="'+key+'">🔗</button>'+
+    '</div>';
+  g.appendChild(card);
+}
+
+function setGL(g){
+  g.onclick=function(e){
+    // POI add
+    const pb=e.target.closest('.poi-add');
+    if(pb){pb.textContent='✓ Добавлено';pb.classList.add('added');pb.disabled=true;toast('Точка добавлена — перестрой маршрут','ok');return;}
+    // Fav
+    const fb=e.target.closest('.fav-btn');
+    if(fb){toggleFav(fb.dataset.k);return;}
+    // Action buttons
+    const btn=e.target.closest('[data-a]');
+    if(btn){
+      e.stopPropagation();
+      const{a,k}=btn.dataset;
+      if(a==='gpx')dlGPX(k);
+      if(a==='foc')focRoute(k);
+      if(a==='share'){saveURLState({mode,from:routes[k]?.fromN||'',to:routes[k]?.toN,types:[routes[k]?.t].filter(Boolean)});openShareModal();}
+      return;
+    }
+    // Desc toggle
+    const tog=e.target.closest('.cdesc-toggle');
+    if(tog){
+      const k=tog.dataset.card;
+      const w=document.getElementById('cdw_'+k);
+      const arr=tog.querySelector('.arr');
+      const open=w.classList.toggle('open');
+      arr.classList.toggle('open',open);
+      return;
+    }
+    // Card select
+    const card=e.target.closest('.rcard');
+    if(card){
+      document.querySelectorAll('.rcard').forEach(c=>c.classList.remove('sel'));
+      card.classList.add('sel');selKey=card.dataset.key;renderMap();
+    }
+  };
+}
+
+function focRoute(k){
+  selKey=k;
+  document.querySelectorAll('.rcard').forEach(c=>c.classList.remove('sel'));
+  document.querySelector('.rcard[data-key="'+k+'"]')?.classList.add('sel');
+  mapHidden={};document.querySelectorAll('.li').forEach(x=>x.classList.remove('off'));
+  renderMap();
+  document.querySelector('.mapw').scrollIntoView({behavior:'smooth',block:'center'});
+}
+function tn(t){return{road:'Шоссейный',gravel:'Гравийный',mixed:'Смешанный',mtb:'МТБ'}[t]||'Маршрут';}
+
+/* ═══════════ LEGEND ══════════════════════════════════════ */
+function buildLegAB(types){
+  const el=document.getElementById('mleg');el.innerHTML='';
+  types.forEach(t=>{
+    const i=document.createElement('div');i.className='li';
+    i.innerHTML='<div class="lln" style="background:'+CL[t]+'"></div>'+(MT[t]?.l||t);
+    i.onclick=()=>{const k0=t+'_0';mapHidden[k0]=!mapHidden[k0];Object.keys(routes).filter(k=>k.startsWith(t+'_')).forEach(k=>mapHidden[k]=mapHidden[k0]);i.classList.toggle('off',!!mapHidden[k0]);renderMap();};
+    el.appendChild(i);
+  });
+  el.classList.add('on');
+}
+function buildLegRing(keys){
+  const el=document.getElementById('mleg');el.innerHTML='';
+  keys.forEach(k=>{
+    const r=routes[k];if(!r||r.err)return;
+    const i=document.createElement('div');i.className='li';
+    i.innerHTML='<div class="lln" style="background:'+CL[r.t||'road']+'"></div>'+(r.dl||'?')+' · '+(MT[r.t||'road']?.l||r.t);
+    i.onclick=()=>{mapHidden[k]=!mapHidden[k];i.classList.toggle('off',!!mapHidden[k]);renderMap();};
+    el.appendChild(i);
+  });
+  el.classList.add('on');
+}
+
+/* ═══════════ GPX ══════════════════════════════════════════ */
+function dlGPX(k){
+  const r=routes[k];if(!r?.s){toast('Нет данных','bad');return;}
+  const{s,t}=r,nm=tn(t||'road'),base=Date.now();
+  const pts=s.lc.map((c,i)=>`    <trkpt lat="${c[0].toFixed(6)}" lon="${c[1].toFixed(6)}">\n      <ele>0</ele>\n      <time>${new Date(base+i*5000).toISOString()}</time>\n    </trkpt>`).join('\n');
+  const gpx=`<?xml version="1.0" encoding="UTF-8"?>\n<gpx version="1.1" creator="VELOGERA" xmlns="http://www.topografix.com/GPX/1/1">\n  <metadata><name>${nm}</name></metadata>\n  <trk><name>${nm}</name><trkseg>\n${pts}\n  </trkseg></trk>\n</gpx>`;
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([gpx],{type:'application/gpx+xml'}));a.download=t+'_'+s.dk+'km.gpx';a.click();URL.revokeObjectURL(a.href);
+  toast('✓ GPX: '+s.dk+' км','ok');
+}
+
+/* ═══════════ HISTORY ═════════════════════════════════════ */
+function saveH(e){
+  try{
+    const h=JSON.parse(localStorage.getItem(HK)||'[]');
+    h.unshift({id:Date.now(),mode:e.mode,from:e.from,to:e.to||null,dir:e.dir??null,distKm:e.distKm||null,types:e.types,date:new Date().toLocaleDateString('ru'),dist:e.dist});
+    localStorage.setItem(HK,JSON.stringify(h.slice(0,8)));rndH();
+  }catch(x){}
+}
+function rndH(){
+  try{
+    const h=JSON.parse(localStorage.getItem(HK)||'[]');
+    const list=document.getElementById('hl');
+    if(!h.length){list.innerHTML='<span style="font-size:10px;color:var(--mut);padding:4px 0">Нет истории</span>';return;}
+    list.innerHTML='';
+    h.forEach(item=>{
+      const el=document.createElement('div');el.className='hi';
+      const icons=(item.types||[]).map(t=>({road:'🛣️',gravel:'🌲',mixed:'🔀',mtb:'⛰️'}[t]||'·')).join('');
+      const route=item.mode==='ring'?item.from+' · '+(DN[String(item.dir)]||'?'):item.from+' → '+(item.to||'?');
+      el.innerHTML='<div class="hi-m">'+(item.mode==='ring'?'🔄 КОЛЬЦО':'↗ A→B')+' · '+item.date+'</div><div class="hi-r">'+route+'</div><div class="hi-d">'+icons+' ~'+item.dist+' км</div>';
+      el.onclick=()=>restH(item);list.appendChild(el);
+    });
+  }catch(x){}
+}
+function restH(h){
+  document.querySelectorAll('.mtab').forEach(t=>t.classList.remove('active'));
+  document.querySelector('.mtab[data-mode="'+h.mode+'"]')?.classList.add('active');
+  document.getElementById('app').className='app mode-'+h.mode;mode=h.mode;
+  if(h.mode==='ab'){if(h.from)document.getElementById('si').value=h.from;if(h.to)document.getElementById('ei').value=h.to;}
+  else{
+    if(h.from)document.getElementById('ri').value=h.from;
+    if(h.dir!=null){selDir=h.dir;document.querySelectorAll('.cdir').forEach(b=>b.classList.toggle('active',parseInt(b.dataset.dir)===h.dir));document.getElementById('cLbl').textContent=DN[String(h.dir)]||'С';document.getElementById('cDeg').textContent=h.dir+'°';}
+    if(h.distKm){document.getElementById('ds').value=h.distKm;document.getElementById('dv').textContent=h.distKm;}
+  }
+  if(h.types)document.querySelectorAll('.tbtn').forEach(b=>b.classList.toggle('active',h.types.includes(b.dataset.type)));
+  toast('Параметры восстановлены','ok');
+  if(!histCol){histCol=true;document.getElementById('hbody').classList.add('collapsed');document.getElementById('htog').textContent='▼';}
+}
+
+/* ═══════════ GEO ══════════════════════════════════════════ */
+function useGeo(id){
+  if(!navigator.geolocation){toast('Геолокация недоступна','bad');return;}
+  toast('Определяю...','');
+  navigator.geolocation.getCurrentPosition(
+    p=>{document.getElementById(id).value=p.coords.latitude.toFixed(5)+','+p.coords.longitude.toFixed(5);toast('✓ Местоположение определено','ok');},
+    err=>toast({1:'Нет разрешения',2:'Позиция недоступна',3:'Таймаут'}[err.code]||'Ошибка','bad'),
+    {timeout:8000,maximumAge:60000}
+  );
+}
+
+/* ═══════════ MODAL HELPERS ═══════════════════════════════ */
+window.closeModal=function(id){document.getElementById(id)?.classList.remove('on');};
+document.querySelectorAll('.modal').forEach(m=>m.onclick=function(e){if(e.target===this)this.classList.remove('on');});
+
+/* ═══════════ UI HELPERS ══════════════════════════════════ */
+function ss(s,t){const d=document.getElementById('dot'),el=document.getElementById('stxt');d.className='sdot'+(s==='live'?' live':s==='spin'?' spin':s==='err'?' err':'');el.textContent=t;}
+function disBtn(v){const b=document.getElementById('genBtn');b.disabled=v;b.textContent=v?'⏳ СТРОЮ...':'ПОСТРОИТЬ МАРШРУТЫ';}
+function ov(v,txt){document.getElementById('ovt').textContent=txt||'';document.getElementById('mov').classList.toggle('on',v);}
+function skels(n){
+  const g=document.getElementById('rg');g.className='rgrid c'+Math.min(n,4);
+  g.innerHTML=Array(n).fill(0).map(()=>'<div class="skel"><div class="sk" style="height:10px;width:65px"></div><div class="sk" style="height:12px;width:55%;margin-top:5px"></div><div class="sk" style="height:34px;margin-top:7px"></div><div class="sk" style="height:52px;margin-top:6px"></div><div class="sk" style="height:8px;margin-top:5px"></div><div class="sk" style="height:32px;margin-top:5px"></div></div>').join('');
+}
+let _tt;
+function toast(msg,cls){const t=document.getElementById('toast');t.textContent=msg;t.className='toast on'+(cls?' '+cls:'');clearTimeout(_tt);_tt=setTimeout(()=>t.classList.remove('on'),3200);}
+
+/* ═══════════ EVENTS ════════════════════════════════════ */
+document.querySelectorAll('.mtab').forEach(tab=>tab.onclick=function(){
+  document.querySelectorAll('.mtab').forEach(t=>t.classList.remove('active'));this.classList.add('active');
+  mode=this.dataset.mode;document.getElementById('app').className='app mode-'+mode;
+});
+document.querySelectorAll('.tbtn').forEach(b=>b.onclick=function(){this.classList.toggle('active');});
+document.getElementById('ds').oninput=function(){document.getElementById('dv').textContent=this.value;};
+document.querySelectorAll('.cdir').forEach(btn=>btn.onclick=function(){
+  document.querySelectorAll('.cdir').forEach(b=>b.classList.remove('active'));this.classList.add('active');
+  selDir=parseInt(this.dataset.dir);document.getElementById('cLbl').textContent=this.dataset.lbl;document.getElementById('cDeg').textContent=selDir+'°';
+});
+document.getElementById('gb1').onclick=()=>useGeo('si');
+document.getElementById('gb2').onclick=()=>useGeo('ri');
+document.getElementById('genBtn').onclick=generate;
+document.getElementById('ei').onkeydown=e=>{if(e.key==='Enter')generate();};
+document.getElementById('swp').onclick=()=>{const s=document.getElementById('si'),e=document.getElementById('ei');[s.value,e.value]=[e.value,s.value];};
+let _wc=0;
+document.getElementById('addW').onclick=function(){
+  if(document.querySelectorAll('.wpt-i').length>=3){toast('Максимум 3 промежуточные точки','');return;}
+  _wc++;const wrap=document.getElementById('wptsWrap');const cur=document.querySelectorAll('.wpt-i').length;
+  const row=document.createElement('div');row.className='wrow';
+  row.innerHTML='<div class="wnum">'+(cur+1)+'</div><input class="ifl wpt-i" placeholder="Промежуточная точка..."><button class="wdel">×</button>';
+  wrap.appendChild(row);
+  row.querySelector('.wdel').onclick=()=>{row.remove();document.querySelectorAll('.wnum').forEach((m,i)=>m.textContent=i+1);};
+  row.querySelector('.wpt-i').focus();
+};
+document.getElementById('stravaBtn').onclick=()=>{document.getElementById('stravaModal').classList.add('on');};
+document.getElementById('strConnectBtn').onclick=connectStrava;
+document.getElementById('strTokenSave').onclick=saveStravaToken;
+document.getElementById('shareBtn').onclick=openShareModal;
+document.getElementById('pdfBtn').onclick=exportPDF;
+document.getElementById('ghBtn').onclick=()=>document.getElementById('ghModal').classList.add('on');
+document.getElementById('wxBtn').onclick=fetchWeather;
+document.getElementById('wxSave').onclick=()=>{const k=document.getElementById('wxKey').value.trim();if(k){localStorage.setItem('vg_wx_key',k);wxApiKey=k;toast('✓ API ключ сохранён','ok');}};
+document.getElementById('hclr').onclick=()=>{try{localStorage.removeItem(HK);rndH();toast('История очищена','');}catch(e){}};
+let histCol=false;
+document.getElementById('htog').onclick=function(){histCol=!histCol;document.getElementById('hbody').classList.toggle('collapsed',histCol);this.textContent=histCol?'▼':'▲';};
+
+/* ═══════════ INIT ══════════════════════════════════════ */
+// Pre-fill saved API key
+if(wxApiKey)document.getElementById('wxKey').value=wxApiKey;
+// Set default date to tomorrow
+const tomorrow=new Date();tomorrow.setDate(tomorrow.getDate()+1);
+document.getElementById('wxDate').value=tomorrow.toISOString().split('T')[0];
+// Init
+window.addEventListener('resize',resizeCvs);
+setTimeout(()=>{
+  resizeCvs();ss('','Готов');rndH();
+  loadURLState();
+  initStrava();
+},80);
+})();
+</script>
+</body>
+</html>
